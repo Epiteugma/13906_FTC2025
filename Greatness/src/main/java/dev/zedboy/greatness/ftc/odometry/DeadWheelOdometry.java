@@ -36,7 +36,13 @@ public class DeadWheelOdometry extends Odometry {
                 deltaPerp / this.ticksPerMeter - phi * this.perpOffset
         );
 
-        deltas.multiply(this.integrateRotation(phi)).rotate(yaw + phi);
+        deltas.multiply(this.integrateRotation(phi));
+
+        this.velocity.x = deltas.x * delta;
+        this.velocity.y = deltas.y * delta;
+        this.angularVel.z = phi * delta;
+
+        deltas.rotate(yaw + phi);
 
         this.position.x += deltas.x;
         this.position.y += deltas.y;

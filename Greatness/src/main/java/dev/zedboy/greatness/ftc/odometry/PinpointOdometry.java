@@ -37,7 +37,13 @@ public class PinpointOdometry extends Odometry {
                 deltaY / this.ticksPerMeter - phi * this.encoderOffsets.y
         );
 
-        deltas.multiply(this.integrateRotation(phi)).rotate(yaw);
+        deltas.multiply(this.integrateRotation(phi));
+
+        this.velocity.x = deltas.x * delta;
+        this.velocity.y = deltas.y * delta;
+        this.angularVel.z = phi * delta;
+
+        deltas.rotate(yaw);
 
         this.position.x += deltas.x;
         this.position.y += deltas.y;
