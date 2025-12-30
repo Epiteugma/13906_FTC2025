@@ -1,0 +1,12 @@
+apply plugin: 'com.android.library'
+
+android {
+    namespace = 'dev.zedboy.greatness'
+    compileSdkVersion 30
+}
+
+dependencies {
+    implementation project(':FtcRobotController')
+}
+
+apply from: '../build.dependencies.gradle'
