@@ -28,7 +28,6 @@ public class DeadWheelOdometry extends Odometry {
         int deltaRight = rightPos - this.lastRightPos;
         int deltaPerp = perpPos - this.lastPerpPos;
 
-        double yaw = Math.atan2(this.direction.y, this.direction.x);
         double phi = (deltaLeft + deltaRight) / (this.ticksPerMeter * this.trackWidth);
 
         vec2 deltas = new vec2(
@@ -42,13 +41,11 @@ public class DeadWheelOdometry extends Odometry {
         this.velocity.y = deltas.y * delta;
         this.angularVel.z = phi * delta;
 
-        deltas.rotate(yaw + phi);
+        deltas.rotate(this.rotation.z + phi);
 
         this.position.x += deltas.x;
         this.position.y += deltas.y;
-
-        this.direction.x = Math.cos(yaw + phi);
-        this.direction.y = Math.sin(yaw + phi);
+        this.rotation.z += phi;
     }
 
     @Override

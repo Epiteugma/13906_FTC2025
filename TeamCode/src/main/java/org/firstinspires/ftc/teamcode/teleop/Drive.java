@@ -63,7 +63,7 @@ public class Drive extends Robot {
             telemetry.addLine("Odometry");
             telemetry.addData("x (cm)", odometry.position.x * 100);
             telemetry.addData("y (cm)", odometry.position.y * 100);
-            telemetry.addData("yaw (deg)", Math.atan2(odometry.direction.y, odometry.direction.x) / Math.PI * 180);
+            telemetry.addData("yaw (deg)", odometry.rotation.z / Math.PI * 180);
             telemetry.update();
         }
     }

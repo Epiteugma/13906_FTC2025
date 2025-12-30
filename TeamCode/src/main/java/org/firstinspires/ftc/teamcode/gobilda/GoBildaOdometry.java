@@ -32,8 +32,7 @@ public class GoBildaOdometry extends Odometry {
 
         this.position.x = rawPose.getX(DistanceUnit.METER);
         this.position.y = rawPose.getY(DistanceUnit.METER);
-        this.direction.x = Math.cos(heading);
-        this.direction.y = Math.sin(heading);
+        this.rotation.z = heading;
 
         vec2 velocity = new vec2(this.driver.getVelX(DistanceUnit.METER), this.driver.getVelY(DistanceUnit.METER));
         velocity.rotate(-heading);
@@ -51,8 +50,7 @@ public class GoBildaOdometry extends Odometry {
 
         this.position.x = rawPose.getX(DistanceUnit.METER);
         this.position.y = rawPose.getY(DistanceUnit.METER);
-        this.direction.x = Math.cos(rawPose.getHeading(AngleUnit.RADIANS));
-        this.direction.y = Math.sin(rawPose.getHeading(AngleUnit.RADIANS));
+        this.rotation.z = rawPose.getHeading(AngleUnit.RADIANS);
     }
 
     public GoBildaOdometry(GoBildaPinpointDriver driver) {

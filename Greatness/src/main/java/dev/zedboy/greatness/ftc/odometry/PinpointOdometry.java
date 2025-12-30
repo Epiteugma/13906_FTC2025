@@ -28,9 +28,7 @@ public class PinpointOdometry extends Odometry {
         int deltaY = yPos - this.lastYPos;
 
         double yaw = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
-        double lastYaw = Math.atan2(this.direction.y, this.direction.x);
-
-        double phi = yaw - lastYaw;
+        double phi = yaw - this.rotation.z;
 
         vec2 deltas = new vec2(
                 deltaX / this.ticksPerMeter - phi * this.encoderOffsets.x,
@@ -47,9 +45,7 @@ public class PinpointOdometry extends Odometry {
 
         this.position.x += deltas.x;
         this.position.y += deltas.y;
-
-        this.direction.x = Math.cos(yaw);
-        this.direction.y = Math.sin(yaw);
+        this.rotation.z = yaw;
     }
 
     @Override
