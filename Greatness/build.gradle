@@ -2,7 +2,7 @@ apply plugin: 'com.android.library'
 
 android {
     namespace = 'dev.zedboy.greatness'
-    compileSdkVersion 30
+    compileSdk 34
 }
 
 dependencies {
