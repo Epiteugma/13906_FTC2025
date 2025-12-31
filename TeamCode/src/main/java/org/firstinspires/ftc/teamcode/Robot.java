@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
@@ -9,7 +9,7 @@ import org.firstinspires.ftc.teamcode.gobilda.GoBildaPinpointDriver;
 
 import dev.zedboy.greatness.Odometry;
 
-public abstract class Robot extends LinearOpMode {
+public abstract class Robot extends OpMode {
     protected static final double COLLECTOR_BACKSPIN_TIME = 0.03;
 
     protected DcMotor frontLeft;
@@ -28,7 +28,7 @@ public abstract class Robot extends LinearOpMode {
         RED, BLUE
     }
 
-    public void runOpMode() {
+    public void init() {
         frontLeft = hardwareMap.get(DcMotor.class, "frontLeft");
         frontRight = hardwareMap.get(DcMotor.class, "frontRight");
         backLeft = hardwareMap.get(DcMotor.class, "backLeft");
@@ -52,9 +52,7 @@ public abstract class Robot extends LinearOpMode {
         odometry = new GoBildaOdometry(pinpoint);
 
         turret = new Turret(hardwareMap);
-
-        this.run();
     }
 
-    public abstract void run();
+    public abstract void loop();
 }
