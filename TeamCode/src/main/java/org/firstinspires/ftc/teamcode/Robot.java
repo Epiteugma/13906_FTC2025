@@ -1,9 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.gobilda.GoBildaOdometry;
@@ -22,10 +20,13 @@ public abstract class Robot extends LinearOpMode {
     protected DcMotor[] driveTrain;
 
     protected DcMotor collector;
-    protected DcMotor shooter;
 
     protected Turret turret;
     protected Odometry odometry;
+
+    public enum Alliance {
+        RED, BLUE
+    }
 
     public void runOpMode() {
         frontLeft = hardwareMap.get(DcMotor.class, "frontLeft");
@@ -44,16 +45,13 @@ public abstract class Robot extends LinearOpMode {
         }
 
         collector = hardwareMap.get(DcMotor.class, "collector");
-        shooter = hardwareMap.get(DcMotor.class, "shooter");
-
         collector.setDirection(DcMotor.Direction.REVERSE);
-        shooter.setDirection(DcMotor.Direction.REVERSE);
 
         GoBildaPinpointDriver pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
         pinpoint.setOffsets(-62, -172, DistanceUnit.MM);
         odometry = new GoBildaOdometry(pinpoint);
 
-        turret = new Turret(hardwareMap, odometry);
+        turret = new Turret(hardwareMap);
 
         this.run();
     }

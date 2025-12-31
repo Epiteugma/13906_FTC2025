@@ -48,9 +48,9 @@ public class Drive extends Robot {
             backLeft.setPower(x + y - w);
             backRight.setPower(x - y + w);
 
-            if (shooting) shooter.setPower(1);
-            else if (shooterBackspin) shooter.setPower(-1);
-            else shooter.setPower(0);
+            if (shooting) turret.shooter.setPower(1);
+            else if (shooterBackspin) turret.shooter.setPower(-1);
+            else turret.shooter.setPower(0);
 
             if (collecting) {
                 collector.setPower(1);
