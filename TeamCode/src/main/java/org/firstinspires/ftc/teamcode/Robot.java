@@ -28,7 +28,7 @@ public abstract class Robot extends OpMode {
         RED, BLUE
     }
 
-    public void init() {
+    public final void init() {
         frontLeft = hardwareMap.get(DcMotor.class, "frontLeft");
         frontRight = hardwareMap.get(DcMotor.class, "frontRight");
         backLeft = hardwareMap.get(DcMotor.class, "backLeft");
