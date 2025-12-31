@@ -4,8 +4,12 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.Robot;
 
+import dev.zedboy.greatness.math.vec2;
+
 @TeleOp(name = "Drive", group = "FTC2025")
 public class Drive extends Robot {
+    Alliance currentAlliance = Alliance.BLUE;
+    boolean allianceLock = false;
 
     boolean shooting = false;
     boolean shooterBackspin = false;
@@ -25,6 +29,7 @@ public class Drive extends Robot {
             timer = System.nanoTime();
 
             odometry.update(delta);
+            turret.aimbot(odometry.position, odometry.rotation.z, currentAlliance, telemetry);
 
             double x = -gamepad1.left_stick_y;
             double y = -gamepad1.left_stick_x;
@@ -43,12 +48,15 @@ public class Drive extends Robot {
 
             collectorBackspinLock = gamepad1.dpad_down;
 
+            if (gamepad1.back && !allianceLock) currentAlliance = currentAlliance == Alliance.BLUE ? Alliance.RED : Alliance.BLUE;
+            allianceLock = gamepad1.back;
+
             frontLeft.setPower(x - y - w);
             frontRight.setPower(x + y + w);
             backLeft.setPower(x + y - w);
             backRight.setPower(x - y + w);
 
-            if (shooting) turret.shooter.setPower(1);
+            if (shooting) turret.shooter.setPower(1); // TODO: dynamically set power / velocity
             else if (shooterBackspin) turret.shooter.setPower(-1);
             else turret.shooter.setPower(0);
 
@@ -61,8 +69,8 @@ public class Drive extends Robot {
             }
 
             telemetry.addLine("Odometry");
-            telemetry.addData("x (cm)", odometry.position.x * 100);
-            telemetry.addData("y (cm)", odometry.position.y * 100);
+            telemetry.addData("x (m)", odometry.position.x);
+            telemetry.addData("y (m)", odometry.position.y);
             telemetry.addData("yaw (deg)", odometry.rotation.z / Math.PI * 180);
             telemetry.update();
         }
