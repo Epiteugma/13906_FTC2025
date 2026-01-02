@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.teleop;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.Robot;
+import org.firstinspires.ftc.teamcode.Turret;
 
 @TeleOp(name = "Drive", group = "FTC2025")
 public class Drive extends Robot {
@@ -24,7 +25,6 @@ public class Drive extends Robot {
         timer = System.nanoTime();
 
         odometry.update(delta);
-        turret.aimbot(odometry.position, odometry.rotation.z, alliance, telemetry);
 
         double x = -gamepad1.left_stick_y;
         double y = -gamepad1.left_stick_x;
@@ -51,12 +51,16 @@ public class Drive extends Robot {
         backLeft.setPower(x + y - w);
         backRight.setPower(x - y + w);
 
-        if (shooting) turret.shooter.setPower(1); // TODO: dynamically set power / velocity
-        else if (shooterBackspin) turret.shooter.setPower(-1);
-        else turret.shooter.setPower(0);
+        Turret.Basket basket = turret.getBasket(alliance, odometry.position, odometry.rotation.z);
+
+        if (shooting) turret.shoot(basket);
+        else if (shooterBackspin) turret.shoot(-1);
+        else turret.shoot(0);
+
+        turret.aimbot(basket, telemetry);
 
         if (collecting) {
-            collector.setPower(1);
+            collector.setPower(!shooting || turret.canShoot(basket) ? 1 : 0);
         } else if ((System.nanoTime() - collectorStoppedAt) / 1E9 < COLLECTOR_BACKSPIN_TIME) {
             collector.setPower(-1);
         } else {
