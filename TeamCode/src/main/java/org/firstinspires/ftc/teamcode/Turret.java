@@ -21,7 +21,7 @@ public class Turret {
 
     static final double SHOOTER_TPR = 28;
     static final double MAX_SHOOTER_RPM = 3500;
-    static final double MAX_SHOT_VELOCITY = 6.5 / Math.cos(MAX_ANGLE); // Max horizontal velocity = 9 ms^-1
+    static final double MAX_SHOT_VELOCITY = 6.55 / Math.cos(MAX_ANGLE); // Max horizontal velocity = 6.55 ms^-1
 
     static final double YAW_TPR = 8192 * 5.75;
     static final double YAW_DIRECTION = -1;
@@ -96,6 +96,10 @@ public class Turret {
         return new Basket(offset, direction);
     }
 
+    public double getYaw() {
+        return YAW_DIRECTION * yawEncoder.getCurrentPosition() / YAW_TPR * 2 * Math.PI;
+    }
+
     public void aimbot(Basket basket, Telemetry telemetry) {
         if (!Double.isNaN(basket.direction.x)) {
             double servoPos = (basket.direction.x - MAX_ANGLE) / (MIN_ANGLE - MAX_ANGLE);
@@ -106,7 +110,7 @@ public class Turret {
             this.pitch.setPosition(servoPos);
         }
 
-        double currentYaw = YAW_DIRECTION * yawEncoder.getCurrentPosition() / YAW_TPR * 2 * Math.PI;
+        double currentYaw = getYaw();
         double yawError = basket.direction.y - currentYaw;
 
         this.yaw.setPower(8 * yawError / Math.PI);

@@ -34,4 +34,12 @@ public class vec3 {
     public vec2 xy() {
         return new vec2(this.x, this.y);
     }
+
+    public vec2 xz() {
+        return new vec2(this.x, this.z);
+    }
+
+    public vec2 yz() {
+        return new vec2(this.y, this.z);
+    }
 }

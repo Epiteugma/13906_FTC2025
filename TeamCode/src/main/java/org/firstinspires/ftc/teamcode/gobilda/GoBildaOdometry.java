@@ -19,7 +19,7 @@ public class GoBildaOdometry extends Odometry {
                 position.x,
                 position.y,
                 AngleUnit.RADIANS,
-                Math.atan2(direction.y, direction.x)
+                direction == null ? 0 : direction.z
         ));
     }
 
@@ -55,6 +55,5 @@ public class GoBildaOdometry extends Odometry {
 
     public GoBildaOdometry(GoBildaPinpointDriver driver) {
         this.driver = driver;
-        this.reset();
     }
 }
