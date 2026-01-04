@@ -105,7 +105,7 @@ public class Visor {
 
             double fieldDir = fieldTag[2]; // TODO: use
             double yaw = odometry.rotation.z; // TODO: pull from Limelight (!)
-            
+
             vec2 robotPos = new vec2(tag.position.x, tag.position.y).rotate(yaw);
 
             robotPos.x = fieldPos.x - robotPos.x;

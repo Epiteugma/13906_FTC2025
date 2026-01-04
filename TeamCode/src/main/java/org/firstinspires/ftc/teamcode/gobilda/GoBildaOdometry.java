@@ -19,7 +19,7 @@ public class GoBildaOdometry extends Odometry {
                 position.x,
                 position.y,
                 AngleUnit.RADIANS,
-                direction == null ? 0 : direction.z
+                direction == null ? this.driver.getHeading(AngleUnit.RADIANS) : direction.z
         ));
     }
 
