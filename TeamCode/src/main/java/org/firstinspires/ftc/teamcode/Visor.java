@@ -6,13 +6,13 @@ import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
-import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
 import java.util.ArrayList;
+import java.util.Map;
 
+import dev.zedboy.greatness.Odometry;
 import dev.zedboy.greatness.math.vec2;
 import dev.zedboy.greatness.math.vec3;
 
@@ -25,6 +25,12 @@ public class Visor {
             0
     ); // roll, pitch, yaw
 
+    // id -> x, y, facing
+    protected static final Map<Integer, double[]> LOCALIZATION_TAGS = Map.of(
+            20, new double[]{1.45, 1.45, -135 / 180.0 * Math.PI},
+            24, new double[]{1.45, -1.45, 135 / 180.0 * Math.PI}
+    );
+
     private final Turret turret;
     protected Limelight3A limelight;
     protected ArrayList<DetectedAprilTag> detections = new ArrayList<>();
@@ -32,12 +38,10 @@ public class Visor {
     public static class DetectedAprilTag {
         final int id;
         final vec2 position;
-        final vec3 rotation;
 
-        private DetectedAprilTag(int id, vec2 position, vec3 rotation) {
+        private DetectedAprilTag(int id, vec2 position) {
             this.id = id;
             this.position = position;
-            this.rotation = rotation;
         }
     }
 
@@ -48,7 +52,7 @@ public class Visor {
         this.turret = turret;
     }
 
-    public boolean poll(Telemetry telemetry) {
+    public boolean poll() {
         LLResult result = limelight.getLatestResult();
         if (result == null || !result.isValid()) return false;
 
@@ -57,7 +61,6 @@ public class Visor {
         for (LLResultTypes.FiducialResult tag : result.getFiducialResults()) {
             Pose3D raw = tag.getTargetPoseCameraSpace();
             Position rawPosition = raw.getPosition();
-            YawPitchRollAngles rawAngles = raw.getOrientation();
 
             vec3 cameraPos = new vec3(rawPosition.z, -rawPosition.x, -rawPosition.y);
 
@@ -86,22 +89,30 @@ public class Visor {
 
             detections.add(new DetectedAprilTag(
                     tag.getFiducialId(),
-                    robotToTag,
-                    new vec3() // TODO!
+                    robotToTag
             ));
-
-            if (telemetry != null) {
-                telemetry.addLine("Tag " + tag.getFiducialId());
-                telemetry.addData("x (m)", robotToTag.x);
-                telemetry.addData("y (m)", robotToTag.y);
-                telemetry.addLine();
-            }
         }
 
         return true;
     }
 
-    public boolean poll() {
-        return this.poll(null);
+    public void recalibrate(Odometry odometry) {
+        for (DetectedAprilTag tag : this.detections) {
+            double[] fieldTag = LOCALIZATION_TAGS.get(tag.id);
+            if (fieldTag == null || fieldTag.length < 3) continue;
+
+            vec2 fieldPos = new vec2(fieldTag[0], fieldTag[1]);
+
+            double fieldDir = fieldTag[2]; // TODO: use
+            double yaw = odometry.rotation.z; // TODO: pull from Limelight (!)
+            
+            vec2 robotPos = new vec2(tag.position.x, tag.position.y).rotate(yaw);
+
+            robotPos.x = fieldPos.x - robotPos.x;
+            robotPos.y = fieldPos.y - robotPos.y;
+
+            odometry.setPosition(new vec3(robotPos, 0));
+            break;
+        }
     }
 }
