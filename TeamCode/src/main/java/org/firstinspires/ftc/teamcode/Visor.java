@@ -111,7 +111,7 @@ public class Visor {
             robotPos.x = fieldPos.x - robotPos.x;
             robotPos.y = fieldPos.y - robotPos.y;
 
-            odometry.setPosition(new vec3(robotPos, 0));
+            // odometry.setPosition(new vec3(robotPos, 0));
             break;
         }
     }
