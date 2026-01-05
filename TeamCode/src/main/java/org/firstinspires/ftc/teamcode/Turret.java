@@ -18,6 +18,7 @@ public class Turret {
 
     static final double BASKET_HEIGHT = 1.15;
     static final double TURRET_HEIGHT = 0.33;
+    static final vec2 TURRET_OFFSET = new vec2(-0.08);
 
     static final double SHOOTER_TPR = 28;
     static final double MAX_SHOOTER_RPM = 3500;
@@ -84,13 +85,19 @@ public class Turret {
     public Basket getBasket(Robot.Alliance alliance, vec3 robotPosition, double robotHeading) {
         vec2 basket = alliance == Robot.Alliance.RED ? RED_BASKET : BLUE_BASKET;
         vec2 offset = new vec2(
-                Math.hypot(basket.x - robotPosition.x, basket.y - robotPosition.y),
+                Math.hypot(
+                        basket.x - robotPosition.x,
+                        basket.y - robotPosition.y
+                ),
                 BASKET_HEIGHT - TURRET_HEIGHT
         );
 
         vec2 direction = new vec2(
                 angleTo(offset, shooterVelocity()),
-                Math.atan2(basket.y - robotPosition.y, basket.x - robotPosition.x) - robotHeading
+                Math.atan2(
+                        basket.y - robotPosition.y,
+                        basket.x - robotPosition.x
+                ) - robotHeading
         );
 
         return new Basket(offset, direction);

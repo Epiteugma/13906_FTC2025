@@ -15,7 +15,6 @@ public class Drive extends Robot {
 
     boolean collecting = false;
     boolean collectorBackspin = false;
-    long collectorStoppedAt = 0;
 
     long timer = System.nanoTime();
 
@@ -35,10 +34,7 @@ public class Drive extends Robot {
         shooterBackspin = gamepad2.left_trigger;
 
         if (gamepad2.dpad_up) collecting = true;
-        if (gamepad2.dpad_down) {
-            collecting = false;
-            collectorStoppedAt = System.nanoTime();
-        }
+        if (gamepad2.dpad_down || gamepad2.left_bumper) collecting = false;
 
         collectorBackspin = gamepad2.dpad_down;
 
@@ -60,7 +56,7 @@ public class Drive extends Robot {
 
         if ((!shooting && collecting) || (shooting && turret.canShoot(basket))) {
             collector.setPower(1);
-        } else if (collectorBackspin || (System.nanoTime() - collectorStoppedAt) / 1E9 < COLLECTOR_BACKSPIN_TIME) {
+        } else if (collectorBackspin) {
             collector.setPower(-1);
         } else {
             collector.setPower(0);

@@ -1,11 +1,12 @@
 package org.firstinspires.ftc.teamcode;
 
+import static org.firstinspires.ftc.teamcode.Turret.TURRET_OFFSET;
+
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
-import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
 
@@ -17,7 +18,6 @@ import dev.zedboy.greatness.math.vec2;
 import dev.zedboy.greatness.math.vec3;
 
 public class Visor {
-    protected static final vec2 TURRET_OFFSET = new vec2(-0.08);
     protected static final vec2 CAMERA_TURRET_OFFSET = new vec2(0.1, 0.1);
     protected static final vec3 CAMERA_ROTATION = new vec3(
             90 / 180.0 * Math.PI,

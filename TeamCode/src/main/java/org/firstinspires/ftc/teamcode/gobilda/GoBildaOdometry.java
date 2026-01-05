@@ -14,13 +14,9 @@ public class GoBildaOdometry extends Odometry {
 
     @Override
     public void setPosition(vec3 position, vec3 direction) {
-        this.driver.setPosition(new Pose2D(
-                DistanceUnit.METER,
-                position.x,
-                position.y,
-                AngleUnit.RADIANS,
-                direction == null ? this.driver.getHeading(AngleUnit.RADIANS) : direction.z
-        ));
+        this.driver.setPosX(position.x, DistanceUnit.METER);
+        this.driver.setPosY(position.y, DistanceUnit.METER);
+        if (direction != null) this.driver.setHeading(direction.z, AngleUnit.RADIANS);
     }
 
     @Override

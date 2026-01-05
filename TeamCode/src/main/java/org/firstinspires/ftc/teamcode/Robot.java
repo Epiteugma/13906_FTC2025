@@ -10,20 +10,10 @@ import org.firstinspires.ftc.teamcode.gobilda.GoBildaPinpointDriver;
 import java.util.Map;
 
 import dev.zedboy.greatness.Odometry;
-import dev.zedboy.greatness.math.vec2;
 import dev.zedboy.greatness.math.vec3;
 
 public abstract class Robot extends OpMode {
     protected static final double COLLECTOR_BACKSPIN_TIME = 0.03;
-
-    protected static final double LIMELIGHT_PITCH = 10 / 180.0 * Math.PI;
-    protected static final vec2 LIMELIGHT_OFFSET = new vec2(0.12, 0.1);
-    protected static final vec2 TURRET_OFFSET = new vec2(-0.08);
-
-    protected static final Map<Integer, vec2> LOCALIZATION_TAGS = Map.of(
-            20, new vec2(1.45, 1.4),
-            24, new vec2(1.45, -1.4)
-    );
 
     protected DcMotor frontLeft;
     protected DcMotor frontRight;
@@ -62,9 +52,15 @@ public abstract class Robot extends OpMode {
         collector.setDirection(DcMotor.Direction.REVERSE);
 
         GoBildaPinpointDriver pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
-        pinpoint.setOffsets(-0.062, -0.172, DistanceUnit.METER);
+        pinpoint.setOffsets(-0.062, -0.18, DistanceUnit.METER);
 
         odometry = new GoBildaOdometry(pinpoint);
+        odometry.reset();
+
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException ignored) {}
+
         odometry.setPosition(new vec3(-1.52, 0.42));
 
         turret = new Turret(hardwareMap);
