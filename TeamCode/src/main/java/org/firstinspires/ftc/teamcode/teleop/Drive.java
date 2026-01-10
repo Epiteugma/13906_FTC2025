@@ -1,15 +1,9 @@
 package org.firstinspires.ftc.teamcode.teleop;
 
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-
 import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.Turret;
 
-@TeleOp(name = "Drive", group = "FTC2025")
 public class Drive extends Robot {
-    Alliance alliance = Alliance.BLUE;
-    boolean allianceLock = false;
-
     boolean shooting = false;
     double shooterBackspin = 0;
 
@@ -36,25 +30,28 @@ public class Drive extends Robot {
         if (gamepad2.dpad_up) collecting = true;
         if (gamepad2.dpad_down || gamepad2.left_bumper) collecting = false;
 
-        collectorBackspin = gamepad2.dpad_down;
+        collectorBackspin = gamepad2.left_bumper;
 
-        if (gamepad2.back && !allianceLock) alliance = alliance == Alliance.BLUE ? Alliance.RED : Alliance.BLUE;
-        allianceLock = gamepad2.back;
+        // turret.yawOffset += -gamepad2.right_stick_x * delta;
+        if (gamepad2.back) turret.yawOffset = 0;
 
         frontLeft.setPower(x - y - w);
         frontRight.setPower(x + y + w);
         backLeft.setPower(x + y - w);
         backRight.setPower(x - y + w);
 
-        Turret.Basket basket = turret.getBasket(alliance, odometry.position, odometry.rotation.z);
+        Turret.Basket basket = turret.getBasket(getAlliance(), odometry.position, odometry.rotation.z);
 
-        if (shooting) turret.shoot(basket);
-        else if (shooterBackspin > 0.2 || collecting) turret.shoot(shooterBackspin > 0.2 ? -shooterBackspin : -0.5);
-        else turret.shoot(0);
+        if (basket != null) {
+            if (shooting) turret.shoot(basket);
+            else if (shooterBackspin > 0.2 || collecting)
+                turret.shoot(shooterBackspin > 0.2 ? -shooterBackspin : -0.5);
+            else turret.shoot(0);
 
-        turret.aimbot(basket, telemetry);
+            turret.aimbot(basket, telemetry);
+        }
 
-        if ((!shooting && collecting) || (shooting && turret.canShoot(basket))) {
+        if ((!shooting && collecting) || (shooting && basket != null && turret.canShoot(basket))) {
             collector.setPower(1);
         } else if (collectorBackspin) {
             collector.setPower(-1);
@@ -65,7 +62,7 @@ public class Drive extends Robot {
         telemetry.addLine("Odometry");
         telemetry.addData("x (m)", odometry.position.x);
         telemetry.addData("y (m)", odometry.position.y);
-        telemetry.addData("yaw (deg)", odometry.rotation.z / Math.PI * 180);
+        telemetry.addData("yaw (deg)", Math.toDegrees(odometry.rotation.z));
         telemetry.update();
     }
 

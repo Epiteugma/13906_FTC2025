@@ -20,15 +20,15 @@ import dev.zedboy.greatness.math.vec3;
 public class Visor {
     protected static final vec2 CAMERA_TURRET_OFFSET = new vec2(0.1, 0.1);
     protected static final vec3 CAMERA_ROTATION = new vec3(
-            90 / 180.0 * Math.PI,
-            15 / 180.0 * Math.PI,
+            Math.toRadians(90),
+            Math.toRadians(15),
             0
     ); // roll, pitch, yaw
 
     // id -> x, y, facing
     protected static final Map<Integer, double[]> LOCALIZATION_TAGS = Map.of(
-            20, new double[]{1.45, 1.45, -135 / 180.0 * Math.PI},
-            24, new double[]{1.45, -1.45, 135 / 180.0 * Math.PI}
+            20, new double[]{1.45, 1.45, Math.toRadians(-135)},
+            24, new double[]{1.45, -1.45, Math.toRadians(135)}
     );
 
     private final Turret turret;

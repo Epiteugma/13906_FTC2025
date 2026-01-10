@@ -13,16 +13,16 @@ import dev.zedboy.greatness.math.vec3;
 
 public class Turret {
     static final double GRAVITY = 9.81;
-    static final double MAX_ANGLE = 46.6 / 180 * Math.PI;
-    static final double MIN_ANGLE = MAX_ANGLE - 12 / 180.0 * Math.PI;
+    static final double MAX_ANGLE = Math.toRadians(46.6);
+    static final double MIN_ANGLE = MAX_ANGLE - Math.toRadians(12);
 
-    static final double BASKET_HEIGHT = 1.15;
+    static final double BASKET_HEIGHT = 1.05;
     static final double TURRET_HEIGHT = 0.33;
     static final vec2 TURRET_OFFSET = new vec2(-0.08);
 
-    static final double SHOOTER_TPR = 28;
-    static final double MAX_SHOOTER_RPM = 3500;
-    static final double MAX_SHOT_VELOCITY = 6.55 / Math.cos(MAX_ANGLE); // Max horizontal velocity = 6.55 ms^-1
+    static final double SHOOTER_TPR = 28 * 0.6;
+    static final double MAX_SHOOTER_RPM = 6000;
+    static final double MAX_SHOT_VELOCITY = 6.6 / Math.cos(MAX_ANGLE); // (Max horizontal velocity / cosine)
 
     static final double YAW_TPR = 8192 * 5.75;
     static final double YAW_DIRECTION = -1;
@@ -39,6 +39,8 @@ public class Turret {
             this.direction = direction;
         }
     }
+
+    public double yawOffset = 0;
 
     public DcMotorEx shooter;
     DcMotor yawEncoder;
@@ -71,8 +73,12 @@ public class Turret {
         };
     }
 
+    public double shooterRPM() {
+        return shooter.getVelocity() / SHOOTER_TPR * 60;
+    }
+
     public double shooterVelocity() {
-        return (shooter.getVelocity() / SHOOTER_TPR * 60) / MAX_SHOOTER_RPM * MAX_SHOT_VELOCITY;
+        return shooterRPM() / MAX_SHOOTER_RPM * MAX_SHOT_VELOCITY;
     }
 
     public double angleTo(vec2 target, double velocity) {
@@ -83,6 +89,8 @@ public class Turret {
     }
 
     public Basket getBasket(Robot.Alliance alliance, vec3 robotPosition, double robotHeading) {
+        if (alliance == Robot.Alliance.UNKNOWN) return null;
+
         vec2 basket = alliance == Robot.Alliance.RED ? RED_BASKET : BLUE_BASKET;
         vec2 offset = new vec2(
                 Math.hypot(
@@ -118,19 +126,21 @@ public class Turret {
         }
 
         double currentYaw = getYaw();
-        double yawError = basket.direction.y - currentYaw;
+        double yawError = basket.direction.y + yawOffset - currentYaw;
 
         this.yaw.setPower(8 * yawError / Math.PI);
 
         if (telemetry != null) {
             telemetry.addLine("Turret");
-            telemetry.addData("shooter velocity (rpm)", shooter.getVelocity() / 28.0 * 60);
+            telemetry.addData("shooter x-velocity (ms^-1)", shooterVelocity() * Math.cos(MAX_ANGLE));
+            telemetry.addData("shooter motor (rpm)", shooter.getVelocity() / 28.0 * 60);
+            telemetry.addData("shooter flywheel (rpm)", shooterRPM());
             telemetry.addData("x distance (m)", basket.offset.x);
             telemetry.addData("y distance (m)", basket.offset.y);
-            telemetry.addData("yaw error (deg)", yawError / Math.PI * 180);
-            telemetry.addData("current yaw (deg)", currentYaw / Math.PI * 180);
-            telemetry.addData("yaw (deg)", basket.direction.y / Math.PI * 180);
-            telemetry.addData("pitch (deg)", basket.direction.x / Math.PI * 180);
+            telemetry.addData("yaw error (deg)", Math.toDegrees(yawError));
+            telemetry.addData("current yaw (deg)", Math.toDegrees(currentYaw));
+            telemetry.addData("yaw (deg)", Math.toDegrees(basket.direction.y));
+            telemetry.addData("pitch (deg)", Math.toDegrees(basket.direction.x));
             telemetry.addLine();
         }
     }
@@ -143,9 +153,9 @@ public class Turret {
         final double VEL_TO_TPS = 1 / MAX_SHOT_VELOCITY * MAX_SHOOTER_RPM / 60.0 * SHOOTER_TPR;
 
         if (basket.offset.x < 2.6) {
-            shooter.setVelocity(6.5 * VEL_TO_TPS);
+            shooter.setVelocity(4 / Math.cos(MAX_ANGLE) * VEL_TO_TPS);
         } else {
-            shooter.setVelocity(7.5 * VEL_TO_TPS);
+            shooter.setVelocity(4.5 / Math.cos(MAX_ANGLE) * VEL_TO_TPS);
         }
     }
 
