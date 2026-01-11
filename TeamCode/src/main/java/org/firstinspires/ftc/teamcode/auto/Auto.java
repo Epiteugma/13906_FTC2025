@@ -13,9 +13,8 @@ import dev.zedboy.greatness.math.vec3;
 
 public class Auto extends Robot {
     protected static double INCH_TO_CM = 2.54;
-    protected static double SHOT_GRADIENT = -12;
-    protected static double PICKUP_DISTANCE = 25;
-    protected static double PICKUP_DISTANCE_INCREMENT = 0;
+    protected static double SHOT_GRADIENT = -9;
+    protected static double[] PICKUP_DISTANCES = new double[]{30, 35, 35};
 
     protected Pose fieldCenter = new Pose(72, 72);
     protected Pose redStart = fieldCenter.plus(new Pose(51, 51, Math.toRadians(45)));
@@ -36,6 +35,7 @@ public class Auto extends Robot {
 
     public enum State {
         MOVING_TO_ARTIFACTS,
+        RETRACTING_FROM_ARTIFACTS,
         MOVING_TO_SHOOT,
         SHOOTING,
         COLLECTING
@@ -148,10 +148,10 @@ public class Auto extends Robot {
 
         if (artifacts != null) {
             if (getAlliance() == Alliance.RED) {
-                artifactsEnd = artifacts.plus(new Pose(PICKUP_DISTANCE + PICKUP_DISTANCE_INCREMENT * pickups, 0));
+                artifactsEnd = artifacts.plus(new Pose(PICKUP_DISTANCES[pickups], 0));
             } else {
                 artifacts = artifacts.setHeading(Math.PI);
-                artifactsEnd = artifacts.minus(new Pose(PICKUP_DISTANCE + PICKUP_DISTANCE_INCREMENT * pickups, 0));
+                artifactsEnd = artifacts.minus(new Pose(PICKUP_DISTANCES[pickups], 0));
             }
         }
 
@@ -172,12 +172,18 @@ public class Auto extends Robot {
                 state = State.COLLECTING;
                 follower.followPath(createPath(artifacts, artifactsEnd));
                 break;
+            case RETRACTING_FROM_ARTIFACTS:
+                if (artifacts == null) break;
+
+                state = State.MOVING_TO_SHOOT;
+                follower.followPath(createPath(artifacts, shoot));
+                break;
             case COLLECTING:
                 if (artifacts == null) break;
 
                 pickups++;
-                state = State.MOVING_TO_SHOOT;
-                follower.followPath(createPath(artifactsEnd, shoot));
+                state = pickups == 2 ? State.RETRACTING_FROM_ARTIFACTS : State.MOVING_TO_SHOOT;
+                follower.followPath(createPath(artifactsEnd, pickups == 2 ? artifacts : shoot));
                 break;
         }
     }
