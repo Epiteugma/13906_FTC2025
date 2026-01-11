@@ -26,8 +26,8 @@ public class Turret {
     static final double YAW_TPR = 8192 * 5.75;
     static final double YAW_DIRECTION = -1;
 
-    static final vec2 BLUE_BASKET = new vec2(1.70, 1.70);
-    static final vec2 RED_BASKET = new vec2(1.70, -1.70);
+    static final vec2 BLUE_BASKET = new vec2(-1.70, 1.70);
+    static final vec2 RED_BASKET = new vec2(1.70, 1.70);
 
     public static final class Basket {
         final vec2 offset;
