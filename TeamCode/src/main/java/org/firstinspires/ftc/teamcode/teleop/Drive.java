@@ -20,8 +20,8 @@ public class Drive extends Robot {
         odometry.update(delta);
         if (visor.poll()) visor.recalibrate(odometry);
 
-        double x = -gamepad1.left_stick_y;
-        double y = -gamepad1.left_stick_x;
+        double y = -gamepad1.left_stick_y;
+        double x = gamepad1.left_stick_x;
         double w = -gamepad1.right_stick_x;
 
         shooting = gamepad2.right_trigger > 0.2;
@@ -32,15 +32,16 @@ public class Drive extends Robot {
 
         collectorBackspin = gamepad2.left_bumper;
 
+        // TEMP: DISABLED DUE TO STICK DRIFT
         // turret.yawOffset += -gamepad2.right_stick_x * delta;
         if (gamepad2.back) turret.yawOffset = 0;
 
-        frontLeft.setPower(x - y - w);
-        frontRight.setPower(x + y + w);
-        backLeft.setPower(x + y - w);
-        backRight.setPower(x - y + w);
+        frontLeft.setPower(y + x - w);
+        frontRight.setPower(y - x + w);
+        backLeft.setPower(y - x - w);
+        backRight.setPower(y + x + w);
 
-        Turret.Basket basket = turret.getBasket(getAlliance(), odometry.position, odometry.rotation.z);
+        Turret.Basket basket = turret.getBasket(getAlliance(), odometry.position, odometry.rotation.y);
 
         if (basket != null) {
             if (shooting) turret.shoot(basket);
@@ -61,8 +62,8 @@ public class Drive extends Robot {
 
         telemetry.addLine("Odometry");
         telemetry.addData("x (m)", odometry.position.x);
-        telemetry.addData("y (m)", odometry.position.y);
-        telemetry.addData("yaw (deg)", Math.toDegrees(odometry.rotation.z));
+        telemetry.addData("z (m)", odometry.position.z);
+        telemetry.addData("yaw (deg)", Math.toDegrees(odometry.rotation.y));
         telemetry.update();
     }
 

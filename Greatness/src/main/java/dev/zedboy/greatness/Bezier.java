@@ -1,14 +1,17 @@
-package dev.zedboy.greatness.math;
+package dev.zedboy.greatness;
+
+import dev.zedboy.greatness.math.vec3;
 
 public class Bezier {
-    vec2 start;
-    vec2 control;
-    vec2 end;
+    vec3 start;
+    vec3 control;
+    vec3 end;
 
-    public vec2 point(double t) {
-        return new vec2(
+    public vec3 point(double t) {
+        return new vec3(
                 (1 - t)*(1 - t) * start.x + 2*t * (1 - t) * control.x + t*t * end.x,
-                (1 - t)*(1 - t) * start.y + 2*t * (1 - t) * control.y + t*t * end.y
+                (1 - t)*(1 - t) * start.y + 2*t * (1 - t) * control.y + t*t * end.y,
+                (1 - t)*(1 - t) * start.z + 2*t * (1 - t) * control.z + t*t * end.z
         );
     }
 
@@ -48,15 +51,15 @@ public class Bezier {
         return (A + B) - a;
     }
 
-    public double closest(vec2 other) {
-        vec2 K = new vec2(start.x - 2 * control.x + end.x, start.y - 2 * control.y + end.y);
-        vec2 L = new vec2(control.x - start.x, control.y - start.y);
-        vec2 M = new vec2(start.x - other.x, start.y - other.y);
+    public double closest(vec3 other) {
+        vec3 K = new vec3(start.x - 2 * control.x + end.x, start.y - 2 * control.y + end.y, start.z - 2 * control.z + end.z);
+        vec3 L = new vec3(control.x - start.x, control.y - start.y, control.z - start.z);
+        vec3 M = new vec3(start.x - other.x, start.y - other.y, start.z - other.z);
 
-        double a = 2 * (K.x*K.x + K.y*K.y);
-        double b = 6 * (K.x * L.x + K.y * L.y);
-        double c = 4 * (L.x*L.x + L.y*L.y) + 2 * (K.x * M.x + K.y * M.y);
-        double d = 2 * (L.x * M.x + L.y * M.y);
+        double a = 2 * (K.x*K.x + K.y*K.y + K.z*K.z);
+        double b = 6 * (K.x * L.x + K.y * L.y + K.z * L.z);
+        double c = 4 * (L.x*L.x + L.y*L.y + L.z*L.z) + 2 * (K.x * M.x + K.y * M.y + K.z * M.z);
+        double d = 2 * (L.x * M.x + L.y * M.y + L.z * M.z);
 
         if (a == 0) return -d / c; // straight line
 
@@ -68,13 +71,21 @@ public class Bezier {
         return t;
     }
 
-    public Bezier(vec2 start, vec2 control, vec2 end) {
+    public Bezier(vec3 start, vec3 control, vec3 end) {
         this.start = start;
         this.control = control;
         this.end = end;
     }
 
+    public Bezier(vec3 start, vec3 end) {
+        this(start, new vec3(
+                start.x + (end.x - start.x) / 2.0,
+                start.y + (end.y - start.y) / 2.0,
+                start.z + (end.z - start.z) / 2.0
+        ), end);
+    }
+
     public Bezier() {
-        this(new vec2(), new vec2(), new vec2());
+        this(new vec3(), new vec3(), new vec3());
     }
 }

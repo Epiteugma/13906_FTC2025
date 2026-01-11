@@ -85,8 +85,9 @@ public class Auto extends Robot {
 
         Pose robotPose = follower.getPose();
         vec3 position = new vec3(
-                (robotPose.getY() - 72) * INCH_TO_CM / 100.0,
-                (72 - robotPose.getX()) * INCH_TO_CM / 100.0
+                (robotPose.getX() - 72) * INCH_TO_CM / 100.0,
+                0,
+                (robotPose.getY() - 72) * INCH_TO_CM / 100.0
         );
 
         Turret.Basket basket = turret.getBasket(getAlliance(), position, robotPose.getHeading() - Math.PI / 2.0);

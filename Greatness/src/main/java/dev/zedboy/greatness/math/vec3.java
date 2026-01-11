@@ -42,4 +42,8 @@ public class vec3 {
     public vec2 yz() {
         return new vec2(this.y, this.z);
     }
+
+    public static double distance(vec3 a, vec3 b) {
+        return Math.sqrt((a.x - b.x)*(a.x - b.x) + (a.y - b.y)*(a.y - b.y) + (a.z - b.z)*(a.z - b.z));
+    }
 }

@@ -13,10 +13,10 @@ public class GoBildaOdometry extends Odometry {
     GoBildaPinpointDriver driver;
 
     @Override
-    public void setPosition(vec3 position, vec3 direction) {
-        this.driver.setPosX(position.x, DistanceUnit.METER);
-        this.driver.setPosY(position.y, DistanceUnit.METER);
-        if (direction != null) this.driver.setHeading(direction.z, AngleUnit.RADIANS);
+    public void setPosition(vec3 position, vec3 rotation) {
+        this.driver.setPosX(position.z, DistanceUnit.METER);
+        this.driver.setPosY(-position.x, DistanceUnit.METER);
+        if (rotation != null) this.driver.setHeading(rotation.y, AngleUnit.RADIANS);
     }
 
     @Override
@@ -26,16 +26,16 @@ public class GoBildaOdometry extends Odometry {
         Pose2D rawPose = this.driver.getPosition();
         double heading = rawPose.getHeading(AngleUnit.RADIANS);
 
-        this.position.x = rawPose.getX(DistanceUnit.METER);
-        this.position.y = rawPose.getY(DistanceUnit.METER);
-        this.rotation.z = heading;
+        this.position.z = rawPose.getX(DistanceUnit.METER);
+        this.position.x = -rawPose.getY(DistanceUnit.METER);
+        this.rotation.y = heading;
 
-        vec2 velocity = new vec2(this.driver.getVelX(DistanceUnit.METER), this.driver.getVelY(DistanceUnit.METER));
+        vec2 velocity = new vec2(-this.driver.getVelY(DistanceUnit.METER), this.driver.getVelX(DistanceUnit.METER));
         velocity.rotate(-heading);
 
         this.velocity.x = velocity.x;
-        this.velocity.y = velocity.y;
-        this.angularVel.z = this.driver.getHeadingVelocity(UnnormalizedAngleUnit.RADIANS);
+        this.velocity.z = velocity.y;
+        this.angularVel.y = this.driver.getHeadingVelocity(UnnormalizedAngleUnit.RADIANS);
     }
 
     @Override
@@ -44,12 +44,13 @@ public class GoBildaOdometry extends Odometry {
 
         Pose2D rawPose = this.driver.getPosition();
 
-        this.position.x = rawPose.getX(DistanceUnit.METER);
-        this.position.y = rawPose.getY(DistanceUnit.METER);
-        this.rotation.z = rawPose.getHeading(AngleUnit.RADIANS);
+        this.position.z = rawPose.getX(DistanceUnit.METER);
+        this.position.x = -rawPose.getY(DistanceUnit.METER);
+        this.rotation.y = rawPose.getHeading(AngleUnit.RADIANS);
     }
 
     public GoBildaOdometry(GoBildaPinpointDriver driver) {
         this.driver = driver;
+        this.reset();
     }
 }

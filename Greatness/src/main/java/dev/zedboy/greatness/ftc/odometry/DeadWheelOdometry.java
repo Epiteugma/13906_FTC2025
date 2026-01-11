@@ -14,38 +14,46 @@ public class DeadWheelOdometry extends Odometry {
     private int lastRightPos;
     private int lastPerpPos;
 
+    private boolean reverseLeft = false;
+    private boolean reverseRight = false;
+    private boolean reversePerp = false;
+
     private double trackWidth;
     private double perpOffset;
     private double ticksPerMeter;
 
     @Override
     public void update(double delta) {
-        int leftPos = this.left.getCurrentPosition();
-        int rightPos = this.right.getCurrentPosition();
-        int perpPos = this.perp == null ? 0 : this.perp.getCurrentPosition();
+        int leftPos = this.left.getCurrentPosition() * (this.reverseLeft ? -1 : 1);
+        int rightPos = this.right.getCurrentPosition() * (this.reverseRight ? -1 : 1);
+        int perpPos = this.perp == null ? 0 : this.perp.getCurrentPosition() * (this.reversePerp ? -1 : 1);
 
         int deltaLeft = leftPos - this.lastLeftPos;
         int deltaRight = rightPos - this.lastRightPos;
         int deltaPerp = perpPos - this.lastPerpPos;
 
+        this.lastLeftPos = leftPos;
+        this.lastRightPos = rightPos;
+        this.lastPerpPos = perpPos;
+
         double phi = (deltaLeft + deltaRight) / (this.ticksPerMeter * this.trackWidth);
 
         vec2 deltas = new vec2(
-                (deltaLeft + deltaRight) / (2 * this.ticksPerMeter),
-                deltaPerp / this.ticksPerMeter - phi * this.perpOffset
+                deltaPerp / this.ticksPerMeter - phi * this.perpOffset,
+                (deltaLeft + deltaRight) / (2 * this.ticksPerMeter)
         );
 
         deltas.multiply(this.integrateRotation(phi));
 
         this.velocity.x = deltas.x * delta;
-        this.velocity.y = deltas.y * delta;
-        this.angularVel.z = phi * delta;
+        this.velocity.z = deltas.y * delta;
+        this.angularVel.y = phi * delta;
 
-        deltas.rotate(this.rotation.z + phi);
+        deltas.rotate(this.rotation.y + phi);
 
         this.position.x += deltas.x;
-        this.position.y += deltas.y;
-        this.rotation.z += phi;
+        this.position.z += deltas.y;
+        this.rotation.y += phi;
     }
 
     @Override
@@ -77,6 +85,19 @@ public class DeadWheelOdometry extends Odometry {
 
     public DeadWheelOdometry setEncoderResolution(double ticksPerMeter) {
         this.ticksPerMeter = ticksPerMeter;
+        return this;
+    }
+
+    public DeadWheelOdometry setEncoderDirections(boolean reverseLeft, boolean reverseRight, boolean reversePerp) {
+        this.reverseLeft = reverseLeft;
+        this.reverseRight = reverseRight;
+        this.reversePerp = reversePerp;
+
+        return this;
+    }
+
+    public DeadWheelOdometry setEncoderDirections(boolean reverseLeft, boolean reverseRight) {
+        this.setEncoderDirections(reverseLeft, reverseRight, this.reversePerp);
         return this;
     }
 

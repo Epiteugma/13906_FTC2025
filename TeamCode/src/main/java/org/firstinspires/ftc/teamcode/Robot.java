@@ -52,16 +52,15 @@ public abstract class Robot extends OpMode {
             pinpoint.setOffsets(-0.062, -0.18, DistanceUnit.METER);
 
             odometry = new GoBildaOdometry(pinpoint);
-            odometry.reset();
 
             try {
                 Thread.sleep(500);
             } catch (InterruptedException ignored) {  }
 
             if (getAlliance() == Alliance.RED) {
-                odometry.setPosition(new vec3(-1.52, -0.42));
+                odometry.setPosition(new vec3(-0.42, 0, -1.52));
             } else if (getAlliance() == Alliance.BLUE) {
-                odometry.setPosition(new vec3(-1.52, 0.42));
+                odometry.setPosition(new vec3(0.42, 0, -1.52));
             }
         }
 
