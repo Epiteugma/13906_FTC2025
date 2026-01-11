@@ -7,9 +7,10 @@ import dev.zedboy.greatness.Odometry;
 import dev.zedboy.greatness.PIDFController;
 
 public class Mecanum implements Kinematic {
-    public PIDFController translational;
-    public PIDFController lateral;
-    public PIDFController angular;
+    // TODO: max. vel tuning etc etc...
+    public PIDFController translational = new PIDFController(0, 0, 0, 1);
+    public PIDFController lateral = new PIDFController(0, 0, 0, 1);
+    public PIDFController angular = new PIDFController(0, 0, 0, 1);
 
     DcMotor frontLeft;
     DcMotor frontRight;
