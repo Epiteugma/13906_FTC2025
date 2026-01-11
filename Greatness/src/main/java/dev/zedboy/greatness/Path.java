@@ -1,11 +1,29 @@
 package dev.zedboy.greatness;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
+import dev.zedboy.greatness.math.interp.Interpolator;
+import dev.zedboy.greatness.math.interp.Lerp;
 import dev.zedboy.greatness.math.vec3;
 
 public class Path {
     public ArrayList<Bezier> segments = new ArrayList<>();
+    public HashMap<Double, Orientation> orientations = new HashMap<>();
+
+    public static class Orientation {
+        protected vec3 rotation;
+        protected Interpolator interpolator;
+
+        protected Orientation(vec3 rotation, Interpolator interpolator) {
+            this.rotation = rotation;
+            this.interpolator = interpolator;
+        }
+
+        protected Orientation(vec3 rotation) {
+            this(rotation, Lerp.INSTANCE);
+        }
+    }
 
     public double closest(vec3 target) {
         double t = 0;
@@ -35,5 +53,27 @@ public class Path {
 
         double ts = t * this.segments.size() - index;
         return this.segments.get(index).point(ts);
+    }
+
+    public vec3 orientation(double t) {
+        double minT = 0;
+        double maxT = 1;
+
+        if (orientations.isEmpty()) return new vec3();
+
+        if (orientations.size() == 1) {
+            return orientations.values().iterator().next().rotation;
+        }
+
+        for (double k : this.orientations.keySet()) {
+            if (t > k && t - k < t - minT) minT = k;
+            else if (t < k && k - t < maxT - t) maxT = k;
+        }
+
+        Orientation start = orientations.get(minT);
+        Orientation end = orientations.get(maxT);
+
+        if (start == null || end == null) return new vec3();
+        return end.interpolator.interpolate((t - minT) / (maxT - minT), start.rotation, end.rotation);
     }
 }

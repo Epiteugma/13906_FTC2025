@@ -1,5 +1,6 @@
 package dev.zedboy.greatness;
 
+import dev.zedboy.greatness.math.interp.Lerp;
 import dev.zedboy.greatness.math.vec3;
 
 public class Bezier {
@@ -78,11 +79,7 @@ public class Bezier {
     }
 
     public Bezier(vec3 start, vec3 end) {
-        this(start, new vec3(
-                start.x + (end.x - start.x) / 2.0,
-                start.y + (end.y - start.y) / 2.0,
-                start.z + (end.z - start.z) / 2.0
-        ), end);
+        this(start, Lerp.INSTANCE.interpolate(0.5, start, end), end);
     }
 
     public Bezier() {
