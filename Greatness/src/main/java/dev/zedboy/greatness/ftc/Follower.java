@@ -27,13 +27,19 @@ public class Follower {
 
         vec3 target = this.path.point(t);
         vec3 rotation = this.path.orientation(t);
-        double velocity = t > 0.7 ? (1 - t) / 0.3 : 1; // TODO: motion profiles?
+        double velocity = 1; // TODO: motion profiles?
 
-        vec2 direction = target.xz().rotate(-this.odometry.rotation.y).normalize();
+        vec2 direction = new vec2(
+                target.x - this.odometry.position.x,
+                target.z - this.odometry.position.z
+        ).rotate(-this.odometry.rotation.y).normalize();
+
+        double headingDelta = rotation.y - this.odometry.rotation.y;
+        headingDelta = Math.atan2(Math.sin(headingDelta), Math.cos(headingDelta));
 
         this.drivetrain.move(
                 direction.x * velocity, 0, direction.y * velocity,
-                0, rotation.y - this.odometry.rotation.y, 0,
+                0, headingDelta, 0,
                 delta
         );
     }

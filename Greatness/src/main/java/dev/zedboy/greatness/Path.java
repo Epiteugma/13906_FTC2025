@@ -8,8 +8,8 @@ import dev.zedboy.greatness.math.interp.Lerp;
 import dev.zedboy.greatness.math.vec3;
 
 public class Path {
-    public ArrayList<Bezier> segments = new ArrayList<>();
-    public HashMap<Double, Orientation> orientations = new HashMap<>();
+    protected ArrayList<Bezier> segments = new ArrayList<>();
+    protected HashMap<Double, Orientation> orientations = new HashMap<>();
 
     public static class Orientation {
         protected vec3 rotation;
@@ -76,4 +76,6 @@ public class Path {
         if (start == null || end == null) return new vec3();
         return end.interpolator.interpolate((t - minT) / (maxT - minT), start.rotation, end.rotation);
     }
+
+    protected Path() {  }
 }
