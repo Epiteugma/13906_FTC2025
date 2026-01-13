@@ -10,7 +10,7 @@ import dev.zedboy.greatness.PathBuilder;
 import dev.zedboy.greatness.ftc.Follower;
 import dev.zedboy.greatness.ftc.kinematics.Mecanum;
 
-//@Disabled
+@Disabled
 @Autonomous(name = "Auto [BETA]")
 public class Auto extends Robot {
     Follower follower;
@@ -26,6 +26,9 @@ public class Auto extends Robot {
         drivetrain.translational.kP = 0.01;
         drivetrain.lateral.kP = 0.01;
         drivetrain.angular.kP = 0.01;
+
+        drivetrain.translational.kF = 1 / 1.9207;
+        drivetrain.lateral.kF = 1 / 1.5814;
 
         Path forward = new PathBuilder()
                 .lineTo(0, 0, 1)

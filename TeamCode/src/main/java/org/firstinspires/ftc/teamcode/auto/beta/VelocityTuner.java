@@ -7,10 +7,10 @@ import org.firstinspires.ftc.teamcode.Robot;
 
 import java.util.ArrayList;
 
-//@Disabled
+@Disabled
 @Autonomous(name = "Velocity tuner")
 public class VelocityTuner extends Robot {
-    static final boolean LATERAL = false;
+    static final boolean LATERAL = true;
     ArrayList<Double> velocities = new ArrayList<>();
 
     double average() {
@@ -41,7 +41,7 @@ public class VelocityTuner extends Robot {
 
         odometry.update(delta);
 
-        if (odometry.position.z < 2) {
+        if ((LATERAL ? odometry.position.x : odometry.position.z) < 2) {
             frontLeft.setPower(1);
             frontRight.setPower(LATERAL ? -1 : 1);
             backLeft.setPower(LATERAL ? -1 : 1);
