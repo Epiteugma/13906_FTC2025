@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.teleop;
 
 import org.firstinspires.ftc.teamcode.Robot;
+import org.firstinspires.ftc.teamcode.SharedState;
 import org.firstinspires.ftc.teamcode.Turret;
 
 public class Drive extends Robot {
@@ -32,8 +33,7 @@ public class Drive extends Robot {
 
         collectorBackspin = gamepad2.left_bumper;
 
-        // TEMP: DISABLED DUE TO STICK DRIFT
-        // turret.yawOffset += -gamepad2.right_stick_x * delta;
+        turret.yawOffset += -gamepad2.right_stick_x * delta;
         if (gamepad2.back) turret.yawOffset = 0;
 
         frontLeft.setPower(y + x - w);
@@ -67,4 +67,8 @@ public class Drive extends Robot {
         telemetry.update();
     }
 
+    @Override
+    public void stop() {
+        SharedState.clear();
+    }
 }

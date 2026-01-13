@@ -57,7 +57,11 @@ public abstract class Robot extends OpMode {
                 Thread.sleep(500);
             } catch (InterruptedException ignored) {  }
 
-            if (getAlliance() == Alliance.RED) {
+            SharedState state = SharedState.get();
+
+            if (state != null) {
+                odometry.setPosition(state.position, state.rotation);
+            } else if (getAlliance() == Alliance.RED) {
                 odometry.setPosition(new vec3(0.42, 0, -1.52));
             } else if (getAlliance() == Alliance.BLUE) {
                 odometry.setPosition(new vec3(-0.42, 0, -1.52));
