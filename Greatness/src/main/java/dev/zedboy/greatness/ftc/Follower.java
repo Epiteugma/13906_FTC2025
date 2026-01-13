@@ -27,7 +27,7 @@ public class Follower {
 
         vec3 target = this.path.point(t);
         vec3 rotation = this.path.orientation(t);
-        double velocity = 1; // TODO: motion profiles?
+        double velocity = t > 0.7 ? (0.7 - t) / 0.3 : 1; // TODO: motion profiles?
 
         vec2 direction = new vec2(
                 target.x - this.odometry.position.x,

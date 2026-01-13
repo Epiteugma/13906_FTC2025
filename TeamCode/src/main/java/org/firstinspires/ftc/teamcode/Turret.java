@@ -19,9 +19,9 @@ public class Turret {
     static final double BASKET_HEIGHT = 1.05;
     static final double TURRET_HEIGHT = 0.33;
 
-    static final double SHOOTER_TPR = 28 * 0.6;
+    static final double SHOOTER_TPR = 28 * 0.75;
     static final double MAX_SHOOTER_RPM = 6000;
-    static final double MAX_SHOT_VELOCITY = 6.6 / Math.cos(MAX_ANGLE); // (Max horizontal velocity / cosine)
+    static final double MAX_SHOT_VELOCITY = 7.8 / Math.cos(MAX_ANGLE); // (Max horizontal velocity / cosine)
 
     static final double YAW_TPR = 8192 * 5.75;
     static final double YAW_DIRECTION = -1;
@@ -127,7 +127,7 @@ public class Turret {
         double currentYaw = getYaw();
         double yawError = basket.direction.y + yawOffset - currentYaw;
 
-        this.yaw.setPower(8 * yawError / Math.PI);
+        this.yaw.setPower(5 * yawError / Math.PI);
 
         if (telemetry != null) {
             telemetry.addLine("Turret");
@@ -152,7 +152,7 @@ public class Turret {
         final double VEL_TO_TPS = 1 / MAX_SHOT_VELOCITY * MAX_SHOOTER_RPM / 60.0 * SHOOTER_TPR;
 
         if (basket.offset.x < 2.6) {
-            shooter.setVelocity(4 / Math.cos(MAX_ANGLE) * VEL_TO_TPS);
+            shooter.setVelocity(4.2 / Math.cos(MAX_ANGLE) * VEL_TO_TPS);
         } else {
             shooter.setVelocity(4.5 / Math.cos(MAX_ANGLE) * VEL_TO_TPS);
         }

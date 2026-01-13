@@ -1,10 +1,10 @@
 package dev.zedboy.greatness;
 
 public class PIDFController {
-    double kP;
-    double kI;
-    double kD;
-    double kF;
+    public double kP;
+    public double kI;
+    public double kD;
+    public double kF;
 
     private double integral;
     private double previousError;
