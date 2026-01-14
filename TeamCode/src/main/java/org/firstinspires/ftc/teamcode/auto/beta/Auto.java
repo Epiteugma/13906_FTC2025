@@ -7,10 +7,11 @@ import org.firstinspires.ftc.teamcode.Robot;
 
 import dev.zedboy.greatness.Path;
 import dev.zedboy.greatness.PathBuilder;
+import dev.zedboy.greatness.math.vec3;
 import dev.zedboy.greatness.ftc.Follower;
 import dev.zedboy.greatness.ftc.kinematics.Mecanum;
 
-@Disabled
+//@Disabled
 @Autonomous(name = "Auto [BETA]")
 public class Auto extends Robot {
     Follower follower;
@@ -20,6 +21,8 @@ public class Auto extends Robot {
 
     @Override
     public void start() {
+        odometry.setPosition(new vec3(), new vec3());
+
         drivetrain = new Mecanum(frontLeft, frontRight, backLeft, backRight, odometry);
         follower = new Follower(drivetrain, odometry);
 
@@ -42,7 +45,7 @@ public class Auto extends Robot {
         double delta = (System.nanoTime() - timer) / 1E9;
         timer = System.nanoTime();
 
-        follower.update(delta);
+        follower.update(delta, telemetry);
     }
 
 }

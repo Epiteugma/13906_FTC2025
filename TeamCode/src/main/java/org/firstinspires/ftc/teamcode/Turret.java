@@ -152,7 +152,7 @@ public class Turret {
         final double VEL_TO_TPS = 1 / MAX_SHOT_VELOCITY * MAX_SHOOTER_RPM / 60.0 * SHOOTER_TPR;
 
         if (basket.offset.x < 2.6) {
-            shooter.setVelocity(4.2 / Math.cos(MAX_ANGLE) * VEL_TO_TPS);
+            shooter.setVelocity(3.3 / Math.cos(MAX_ANGLE) * VEL_TO_TPS);
         } else {
             shooter.setVelocity(4.5 / Math.cos(MAX_ANGLE) * VEL_TO_TPS);
         }

@@ -15,7 +15,8 @@ import dev.zedboy.greatness.math.vec3;
 public class Auto extends Robot {
     protected static double INCH_TO_CM = 2.54;
     protected static double SHOT_GRADIENT = -9;
-    protected static double[] PICKUP_DISTANCES = new double[]{30, 35, 35};
+    protected static double SHOT_TIMEOUT = 0.8;
+    protected static double[] PICKUP_DISTANCES = new double[]{28, 34, 37};
 
     protected Pose fieldCenter = new Pose(72, 72);
     protected Pose redStart = fieldCenter.plus(new Pose(51, 51, Math.toRadians(45)));
@@ -47,7 +48,7 @@ public class Auto extends Robot {
 
     double lastVelocity = 0;
     long lastVelocityPoll = System.nanoTime();
-    double lastShot = System.nanoTime();
+    long lastShot = System.nanoTime();
 
     State state = State.MOVING_TO_SHOOT;
 
@@ -98,12 +99,12 @@ public class Auto extends Robot {
             turret.aimbot(basket, telemetry);
         }
 
-        if (state == State.SHOOTING) {
+        if (state == State.SHOOTING || state == State.MOVING_TO_SHOOT) {
             turret.shoot(basket);
 
             double velGradient = (turret.shooterVelocity() - lastVelocity) / 0.05;
 
-            if (velGradient <= SHOT_GRADIENT && (System.nanoTime() - lastShot) / 1E9 >= 0.1) {
+            if (state == State.SHOOTING && velGradient <= SHOT_GRADIENT && (System.nanoTime() - lastShot) / 1E9 >= 0.1) {
                 lastShot = System.nanoTime();
                 didShoot++;
             }
@@ -112,6 +113,8 @@ public class Auto extends Robot {
         } else {
             turret.shoot(0);
         }
+
+        if (!canShoot) lastShot = System.nanoTime();
 
         if ((System.nanoTime() - lastVelocityPoll) / 1E9 >= 0.05) {
             lastVelocity = turret.shooterVelocity();
@@ -149,10 +152,10 @@ public class Auto extends Robot {
 
         if (artifacts != null) {
             if (getAlliance() == Alliance.RED) {
-                artifactsEnd = artifacts.plus(new Pose(PICKUP_DISTANCES[pickups], 0));
+                artifactsEnd = artifacts.plus(new Pose(PICKUP_DISTANCES[pickups], 0, Math.toRadians(10)));
             } else {
                 artifacts = artifacts.setHeading(Math.PI);
-                artifactsEnd = artifacts.minus(new Pose(PICKUP_DISTANCES[pickups], 0));
+                artifactsEnd = artifacts.minus(new Pose(PICKUP_DISTANCES[pickups], 0, Math.toRadians(10)));
             }
         }
 
@@ -162,7 +165,8 @@ public class Auto extends Robot {
                 didShoot = 0;
                 break;
             case SHOOTING:
-                if (didShoot < 3 || artifacts == null) break;
+                boolean timedOut = canShoot && (System.nanoTime() - lastShot) / 1E9 > SHOT_TIMEOUT;
+                if (artifacts == null || !timedOut && didShoot < 3) break;
 
                 state = State.MOVING_TO_ARTIFACTS;
                 follower.followPath(createPath(shoot, artifacts));

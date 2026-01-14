@@ -45,7 +45,7 @@ public class Drive extends Robot {
             if (gamepad2.dpad_up) collecting = true;
             if (gamepad2.dpad_down || gamepad2.left_bumper) collecting = false;
 
-            collectorBackspin = gamepad2.left_bumper;
+            collectorBackspin = gamepad2.dpad_down;
 
             turret.yawOffset += -gamepad2.right_stick_x * delta;
             if (gamepad2.back) turret.yawOffset = 0;

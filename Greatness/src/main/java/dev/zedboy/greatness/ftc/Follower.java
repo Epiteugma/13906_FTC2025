@@ -1,5 +1,7 @@
 package dev.zedboy.greatness.ftc;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
+
 import dev.zedboy.greatness.Kinematic;
 import dev.zedboy.greatness.Odometry;
 import dev.zedboy.greatness.Path;
@@ -12,7 +14,7 @@ public class Follower {
 
     Path path;
 
-    public void update(double delta) {
+    public void update(double delta, Telemetry telemetry) {
         this.odometry.update(delta);
 
         if (this.path == null) {
@@ -35,7 +37,13 @@ public class Follower {
         ).rotate(-this.odometry.rotation.y).normalize();
 
         double headingDelta = rotation.y - this.odometry.rotation.y;
-        headingDelta = Math.atan2(Math.sin(headingDelta), Math.cos(headingDelta));
+        // headingDelta = Math.atan2(Math.sin(headingDelta), Math.cos(headingDelta));
+
+        telemetry.addData("dir x", direction.x * velocity);
+        telemetry.addData("dir z", direction.y * velocity);
+        telemetry.addData("vel x", this.odometry.velocity.x);
+        telemetry.addData("vel z", this.odometry.velocity.z);
+        telemetry.update();
 
         this.drivetrain.move(
                 direction.x * velocity, 0, direction.y * velocity,
