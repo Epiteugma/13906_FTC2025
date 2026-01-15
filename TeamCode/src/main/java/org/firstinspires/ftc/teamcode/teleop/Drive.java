@@ -5,7 +5,7 @@ import org.firstinspires.ftc.teamcode.SharedState;
 import org.firstinspires.ftc.teamcode.Turret;
 
 public class Drive extends Robot {
-    static final boolean SINGLE_GAMEPAD_CONTROL = true;
+    static final boolean SINGLE_GAMEPAD_CONTROL = false;
 
     boolean shooting = false;
     double shooterBackspin = 0;
@@ -59,7 +59,7 @@ public class Drive extends Robot {
         Turret.Basket basket = turret.getBasket(getAlliance(), odometry.position, odometry.rotation.y);
 
         if (basket != null) {
-            if (shooting) turret.shoot(basket);
+            if (shooting) turret.shoot(basket, delta);
             else if (shooterBackspin > 0.2 || collecting)
                 turret.shoot(shooterBackspin > 0.2 ? -shooterBackspin : -0.5);
             else turret.shoot(0);

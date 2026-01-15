@@ -51,6 +51,7 @@ public class Auto extends Robot {
     long lastShot = System.nanoTime();
 
     State state = State.MOVING_TO_SHOOT;
+    long timer;
 
     @Override
     public boolean usingPedroPathing() {
@@ -66,6 +67,7 @@ public class Auto extends Robot {
 
     @Override
     public void start() {
+        timer = System.nanoTime();
         follower = Constants.createFollower(hardwareMap);
 
         if (getAlliance() == Alliance.UNKNOWN) return;
@@ -82,6 +84,9 @@ public class Auto extends Robot {
     @Override
     public void loop() {
         if (getAlliance() == Alliance.UNKNOWN) return;
+
+        double delta = (System.nanoTime() - timer) / 1E9;
+        timer = System.nanoTime();
 
         follower.update();
 
@@ -100,7 +105,7 @@ public class Auto extends Robot {
         }
 
         if (state == State.SHOOTING || state == State.MOVING_TO_SHOOT) {
-            turret.shoot(basket);
+            turret.shoot(basket, delta);
 
             double velGradient = (turret.shooterVelocity() - lastVelocity) / 0.05;
 

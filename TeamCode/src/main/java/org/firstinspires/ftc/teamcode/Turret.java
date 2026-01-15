@@ -8,6 +8,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
+import dev.zedboy.greatness.PIDFController;
 import dev.zedboy.greatness.math.vec2;
 import dev.zedboy.greatness.math.vec3;
 
@@ -21,7 +22,7 @@ public class Turret {
 
     static final double SHOOTER_TPR = 28 * 0.75;
     static final double MAX_SHOOTER_RPM = 6000;
-    static final double MAX_SHOT_VELOCITY = 7.8 / Math.cos(MAX_ANGLE); // (Max horizontal velocity / cosine)
+    static final double MAX_SHOT_VELOCITY = 7.85 / Math.cos(MAX_ANGLE); // (Max horizontal velocity / cosine)
 
     static final double YAW_TPR = 8192 * 5.75;
     static final double YAW_DIRECTION = -1;
@@ -42,6 +43,7 @@ public class Turret {
     public double yawOffset = 0;
 
     public DcMotorEx shooter;
+    PIDFController shooterPIDF = new PIDFController(0.05, 0, 0, 1 / MAX_SHOOTER_RPM);
     DcMotor yawEncoder;
 
     Servo pitch;
@@ -148,14 +150,18 @@ public class Turret {
         this.aimbot(basket, null);
     }
 
-    public void shoot(Basket basket) {
-        final double VEL_TO_TPS = 1 / MAX_SHOT_VELOCITY * MAX_SHOOTER_RPM / 60.0 * SHOOTER_TPR;
+    public void shoot(Basket basket, double delta) {
+        final double VEL_TO_RPM = 1 / MAX_SHOT_VELOCITY * MAX_SHOOTER_RPM;
+
+        double power;
 
         if (basket.offset.x < 2.6) {
-            shooter.setVelocity(3.3 / Math.cos(MAX_ANGLE) * VEL_TO_TPS);
+            power = shooterPIDF.update(4.0 / Math.cos(MAX_ANGLE) * VEL_TO_RPM, shooterRPM(), delta);
         } else {
-            shooter.setVelocity(4.7 / Math.cos(MAX_ANGLE) * VEL_TO_TPS);
+            power = shooterPIDF.update(4.8 / Math.cos(MAX_ANGLE) * VEL_TO_RPM, shooterRPM(), delta);
         }
+
+        shooter.setPower(power);
     }
 
     public void shoot(double power) {
