@@ -5,7 +5,7 @@ import org.firstinspires.ftc.teamcode.SharedState;
 import org.firstinspires.ftc.teamcode.Turret;
 
 public class Drive extends Robot {
-    static final boolean SINGLE_GAMEPAD_CONTROL = false;
+    static final boolean SINGLE_GAMEPAD_CONTROL = true;
 
     boolean shooting = false;
     double shooterBackspin = 0;

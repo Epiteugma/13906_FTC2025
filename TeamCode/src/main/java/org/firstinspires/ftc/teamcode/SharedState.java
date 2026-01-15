@@ -17,7 +17,7 @@ public class SharedState implements Runnable {
             Thread.sleep((long) (TIMEOUT * 1E3));
         } catch (InterruptedException ignored) {}
 
-        INSTANCE = null;
+        if (INSTANCE == this) INSTANCE = null;
     }
 
     private SharedState(vec3 position, vec3 rotation) {
@@ -31,7 +31,10 @@ public class SharedState implements Runnable {
     }
 
     public static void clear() {
-        if (INSTANCE != null) INSTANCE.thread.interrupt();
+        if (INSTANCE == null) return;
+
+        INSTANCE.thread.interrupt();
+        INSTANCE = null;
     }
 
     public static void save(vec3 position, vec3 rotation) {

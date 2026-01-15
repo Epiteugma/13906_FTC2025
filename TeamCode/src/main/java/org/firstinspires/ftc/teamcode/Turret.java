@@ -21,7 +21,7 @@ public class Turret {
 
     static final double SHOOTER_TPR = 28 * 0.75;
     static final double MAX_SHOOTER_RPM = 6000;
-    static final double MAX_SHOT_VELOCITY = 8 / Math.cos(MAX_ANGLE); // (Max horizontal velocity / cosine)
+    static final double MAX_SHOT_VELOCITY = 7.8 / Math.cos(MAX_ANGLE); // (Max horizontal velocity / cosine)
 
     static final double YAW_TPR = 8192 * 5.75;
     static final double YAW_DIRECTION = -1;
@@ -154,7 +154,7 @@ public class Turret {
         if (basket.offset.x < 2.6) {
             shooter.setVelocity(3.3 / Math.cos(MAX_ANGLE) * VEL_TO_TPS);
         } else {
-            shooter.setVelocity(4.5 / Math.cos(MAX_ANGLE) * VEL_TO_TPS);
+            shooter.setVelocity(4.7 / Math.cos(MAX_ANGLE) * VEL_TO_TPS);
         }
     }
 
