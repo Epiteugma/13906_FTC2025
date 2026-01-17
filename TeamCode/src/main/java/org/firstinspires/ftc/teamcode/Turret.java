@@ -127,7 +127,16 @@ public class Turret {
         }
 
         double currentYaw = getYaw();
-        double yawError = basket.direction.y + yawOffset - currentYaw;
+        double targetYaw = basket.direction.y + yawOffset;
+
+        double rangeOffset = Math.toRadians(45);
+
+        targetYaw = Math.atan2(
+                Math.sin(targetYaw + rangeOffset),
+                Math.cos(targetYaw + rangeOffset)
+        ) - rangeOffset;
+
+        double yawError = targetYaw - currentYaw;
 
         this.yaw.setPower(5 * yawError / Math.PI);
 
