@@ -10,6 +10,7 @@ public class SharedState implements Runnable {
     private final Thread thread;
     public vec3 position;
     public vec3 rotation;
+    public double turretYaw;
 
     @Override
     public void run() {
@@ -20,9 +21,10 @@ public class SharedState implements Runnable {
         if (INSTANCE == this) INSTANCE = null;
     }
 
-    private SharedState(vec3 position, vec3 rotation) {
+    private SharedState(vec3 position, vec3 rotation, double turretYaw) {
         this.position = position;
         this.rotation = rotation;
+        this.turretYaw = turretYaw;
         this.thread = new Thread(this);
     }
 
@@ -37,8 +39,8 @@ public class SharedState implements Runnable {
         INSTANCE = null;
     }
 
-    public static void save(vec3 position, vec3 rotation) {
+    public static void save(vec3 position, vec3 rotation, double turretYaw) {
         if (INSTANCE != null) INSTANCE.thread.interrupt();
-        INSTANCE = new SharedState(position, rotation);
+        INSTANCE = new SharedState(position, rotation, turretYaw);
     }
 }

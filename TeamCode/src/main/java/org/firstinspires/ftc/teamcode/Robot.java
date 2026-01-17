@@ -47,6 +47,8 @@ public abstract class Robot extends OpMode {
         collector = hardwareMap.get(DcMotor.class, "collector");
         collector.setDirection(DcMotor.Direction.REVERSE);
 
+        SharedState state = null;
+
         if (!usingPedroPathing()) {
             GoBildaPinpointDriver pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
             pinpoint.setOffsets(-0.062, -0.18, DistanceUnit.METER);
@@ -57,7 +59,7 @@ public abstract class Robot extends OpMode {
                 Thread.sleep(500);
             } catch (InterruptedException ignored) {  }
 
-            SharedState state = SharedState.get();
+            state = SharedState.get();
 
             if (state != null) {
                 odometry.setPosition(state.position, state.rotation);
@@ -70,6 +72,8 @@ public abstract class Robot extends OpMode {
 
         turret = new Turret(hardwareMap);
         visor = new Visor(hardwareMap, turret);
+
+        if (state != null) turret.yawOffset = -state.turretYaw;
     }
 
     public boolean usingPedroPathing() {

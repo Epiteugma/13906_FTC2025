@@ -209,6 +209,6 @@ public class Auto extends Robot {
                 (robotPose.getY() - 72) * INCH_TO_CM / 100.0
         );
 
-        SharedState.save(position, new vec3(0, robotPose.getHeading() - Math.PI / 2.0));
+        SharedState.save(position, new vec3(0, robotPose.getHeading() - Math.PI / 2.0), turret.getYaw());
     }
 }

@@ -13,7 +13,12 @@ public class Drive extends Robot {
     boolean collecting = false;
     boolean collectorBackspin = false;
 
-    long timer = System.nanoTime();
+    long timer;
+
+    @Override
+    public void start() {
+         timer = System.nanoTime();
+    }
 
     @Override
     public void loop() {
