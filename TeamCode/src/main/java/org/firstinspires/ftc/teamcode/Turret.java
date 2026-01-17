@@ -20,7 +20,7 @@ public class Turret {
     static final double BASKET_HEIGHT = 1.05;
     static final double TURRET_HEIGHT = 0.33;
 
-    static final double SHOOTER_TPR = 28 * 0.75;
+    static final double SHOOTER_TPR = 28 * 0.72;
     static final double MAX_SHOOTER_RPM = 6000;
     static final double MAX_SHOT_VELOCITY = 7.85 / Math.cos(MAX_ANGLE); // (Max horizontal velocity / cosine)
 

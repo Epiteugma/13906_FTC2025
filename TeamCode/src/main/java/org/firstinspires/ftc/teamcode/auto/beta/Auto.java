@@ -45,7 +45,7 @@ public class Auto extends Robot {
         double delta = (System.nanoTime() - timer) / 1E9;
         timer = System.nanoTime();
 
-        follower.update(delta, telemetry);
+        follower.update(delta);
     }
 
 }
