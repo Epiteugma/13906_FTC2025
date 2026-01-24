@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.teleop;
 import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.SharedState;
 import org.firstinspires.ftc.teamcode.Turret;
+import org.firstinspires.ftc.teamcode.ZoneManager;
 
 public class Drive extends Robot {
     static final boolean SINGLE_GAMEPAD_CONTROL = false;
@@ -62,23 +63,21 @@ public class Drive extends Robot {
         backRight.setPower(y + x + w);
 
         Turret.Basket basket = turret.getBasket(getAlliance(), odometry.position);
+        boolean canShoot = turret.canShoot(basket);
 
         if (basket != null) {
-            double velocity = basket.shotVelocity(Turret.MAX_ANGLE);
+            turret.lock(basket, odometry.rotation.y, delta);
 
-            turret.releaseStopper();
-
-            turret.lockYaw(basket, odometry.rotation.y, delta);
-            turret.lockPitch(basket, velocity);
-            turret.shoot(turret.shooter.withCompression(velocity), delta, telemetry);
-
-            telemetry.addLine("Turret");
-            telemetry.addData("artifact velocity", velocity);
-            telemetry.addData("velocity with compression", turret.shooter.withCompression(velocity));
-            telemetry.addLine();
+            if (shooting) {
+                turret.shoot(basket, delta);
+                turret.releaseStopper();
+            } else {
+                turret.shoot(collecting ? -0.5 : 0);
+                turret.retainStopper();
+            }
         }
 
-        if (collecting) {
+        if (shooting && canShoot || !shooting && collecting) {
             collector.setPower(1);
         } else if (collectorBackspin) {
             collector.setPower(-1);

@@ -93,6 +93,7 @@ public class Turret {
         static final double RADIUS = 0.045;
         static final double RPM = 6000;
 
+        // Lockheed Martin, huh?
         static final double ARTIFACT_MASS = 0.0748;
         static final double ARTIFACT_COMPRESSION = 0.008;
         static final double ARTIFACT_RADIUS = 0.127;
@@ -119,7 +120,7 @@ public class Turret {
             return motor.getVelocity() / (TPR * RATIO) * 60;
         }
 
-        double getWheelVelocity() {
+        public double getWheelVelocity() {
             double omega = getWheelRPM() / 60.0 * (2 * Math.PI);
             return omega * RADIUS;
         }
@@ -128,13 +129,16 @@ public class Turret {
             return Math.sqrt(RADIUS * (Math.pow(velocity, 2) / RADIUS + COMPRESSION_ACCEL));
         }
 
+        public double withoutCompression(double velocity) {
+            return Math.sqrt((Math.pow(velocity, 2) / RADIUS - COMPRESSION_ACCEL) * RADIUS);
+        }
+
         void setPower(double power) {
             motor.setPower(power);
         }
 
-        void setVelocity(double velocity, double delta, Telemetry telemetry) {
+        void setVelocity(double velocity, double delta) {
             motor.setPower(pidf.update(velocity, getWheelVelocity(), delta));
-            telemetry.addData("shooter velocity", getWheelVelocity());
         }
     }
 
@@ -174,8 +178,31 @@ public class Turret {
         shooter.setPower(power);
     }
 
-    public void shoot(double velocity, double delta, Telemetry telemetry) {
-        shooter.setVelocity(velocity, delta, telemetry);
+    public void shoot(double velocity, double delta) {
+        shooter.setVelocity(velocity, delta);
+    }
+
+    public void shoot(Basket basket, double delta) {
+        shoot(shooter.withCompression(targetVelocity(basket)), delta);
+    }
+
+    private double targetVelocity(Basket basket) {
+        if (basket.distance.x < 2.6) {
+            return basket.shotVelocity(MAX_ANGLE);
+        } else {
+            return basket.shotVelocity(MIN_ANGLE);
+        }
+    }
+
+    public void lock(Basket basket, double robotYaw, double delta) {
+        double velocity = targetVelocity(basket);
+
+        lockYaw(basket, robotYaw, delta);
+        lockPitch(basket, velocity);
+    }
+
+    public boolean canShoot(Basket basket) {
+        return targetVelocity(basket) - shooter.getWheelVelocity() < 0.2;
     }
 
     public void retainStopper() {

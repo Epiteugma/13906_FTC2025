@@ -8,9 +8,16 @@ import org.firstinspires.ftc.teamcode.gobilda.GoBildaOdometry;
 import org.firstinspires.ftc.teamcode.gobilda.GoBildaPinpointDriver;
 
 import dev.zedboy.greatness.Odometry;
-import dev.zedboy.greatness.math.vec3;
+import dev.zedboy.greatness.math.vec2;
 
 public abstract class Robot extends OpMode {
+    private static final ZoneManager.OBB[] COLLISION_BOXES = new ZoneManager.OBB[]{
+            new ZoneManager.OBB(new vec2(0.207, 0.168), new vec2(0.038, 0.104)),
+            new ZoneManager.OBB(new vec2(0.207, -0.168), new vec2(0.038, 0.104)),
+            new ZoneManager.OBB(new vec2(-0.207, 0.168), new vec2(0.038, 0.104)),
+            new ZoneManager.OBB(new vec2(-0.207, -0.168), new vec2(0.038, 0.104)),
+    };
+
     protected DcMotor frontLeft;
     protected DcMotor frontRight;
     protected DcMotor backLeft;
@@ -78,4 +85,22 @@ public abstract class Robot extends OpMode {
     }
 
     public abstract void loop();
+
+    public boolean isTouchingZone(ZoneManager.Zone zone) {
+        vec2 position;
+        double heading;
+
+        if (usingPedroPathing()) {
+            return false;
+        } else {
+            position = new vec2(odometry.position.x, odometry.position.z);
+            heading = odometry.rotation.y;
+        }
+
+        for (ZoneManager.OBB obb : COLLISION_BOXES) {
+            if (zone.intersects(obb, position, heading)) return true;
+        }
+
+        return false;
+    }
 }
