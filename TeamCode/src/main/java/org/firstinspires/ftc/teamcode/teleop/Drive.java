@@ -72,6 +72,8 @@ public class Drive extends Robot {
             turret.aimbot(basket, telemetry);
         }
 
+        turret.stopper.setPosition(shooting ? 1 : 0);
+
         if ((!shooting && collecting) || (shooting && basket != null && turret.canShoot(basket))) {
             collector.setPower(1);
         } else if (collectorBackspin) {

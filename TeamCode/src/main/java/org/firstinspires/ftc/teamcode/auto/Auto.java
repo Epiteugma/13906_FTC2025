@@ -102,6 +102,9 @@ public class Auto extends Robot {
 
         if (state == State.MOVING_TO_SHOOT || state == State.SHOOTING) {
             turret.aimbot(basket, telemetry);
+            turret.stopper.setPosition(1);
+        } else {
+            turret.stopper.setPosition(0);
         }
 
         if (state == State.SHOOTING || state == State.MOVING_TO_SHOOT) {

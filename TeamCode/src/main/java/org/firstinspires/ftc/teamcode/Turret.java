@@ -48,6 +48,7 @@ public class Turret {
 
     Servo pitch;
     CRServo yaw;
+    public Servo stopper;
 
     public Turret(HardwareMap hardwareMap) {
         shooter = hardwareMap.get(DcMotorEx.class, "shooter");
@@ -55,6 +56,7 @@ public class Turret {
 
         pitch = hardwareMap.get(Servo.class, "turretPitch");
         yaw = hardwareMap.get(CRServo.class, "turretYaw");
+        stopper = hardwareMap.get(Servo.class, "stopper");
 
         shooter.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
         shooter.setDirection(DcMotorEx.Direction.REVERSE);
