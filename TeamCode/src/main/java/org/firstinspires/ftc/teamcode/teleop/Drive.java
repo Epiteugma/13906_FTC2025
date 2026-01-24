@@ -61,20 +61,24 @@ public class Drive extends Robot {
         backLeft.setPower(y - x - w);
         backRight.setPower(y + x + w);
 
-        Turret.Basket basket = turret.getBasket(getAlliance(), odometry.position, odometry.rotation.y);
+        Turret.Basket basket = turret.getBasket(getAlliance(), odometry.position);
 
         if (basket != null) {
-            if (shooting) turret.shoot(basket, delta);
-            else if (shooterBackspin > 0.2 || collecting)
-                turret.shoot(shooterBackspin > 0.2 ? -shooterBackspin : -0.5);
-            else turret.shoot(0);
+            double velocity = basket.shotVelocity(Turret.MAX_ANGLE);
 
-            turret.aimbot(basket, telemetry);
+            turret.releaseStopper();
+
+            turret.lockYaw(basket, odometry.rotation.y, delta);
+            turret.lockPitch(basket, velocity);
+            turret.shoot(turret.shooter.withCompression(velocity), delta, telemetry);
+
+            telemetry.addLine("Turret");
+            telemetry.addData("artifact velocity", velocity);
+            telemetry.addData("velocity with compression", turret.shooter.withCompression(velocity));
+            telemetry.addLine();
         }
 
-        turret.stopper.setPosition(shooting ? 1 : 0);
-
-        if ((!shooting && collecting) || (shooting && basket != null && turret.canShoot(basket))) {
+        if (collecting) {
             collector.setPower(1);
         } else if (collectorBackspin) {
             collector.setPower(-1);

@@ -13,173 +13,176 @@ import dev.zedboy.greatness.math.vec2;
 import dev.zedboy.greatness.math.vec3;
 
 public class Turret {
+    public static final double MAX_ANGLE = Math.toRadians(46.6);
+    public static final double MIN_ANGLE = MAX_ANGLE - Math.toRadians(12);
+
     static final double GRAVITY = 9.81;
-    static final double MAX_ANGLE = Math.toRadians(46.6);
-    static final double MIN_ANGLE = MAX_ANGLE - Math.toRadians(12);
 
     static final double BASKET_HEIGHT = 1.05;
     static final double TURRET_HEIGHT = 0.33;
 
-    static final double SHOOTER_TPR = 28 * 0.72;
-    static final double MAX_SHOOTER_RPM = 6000;
-    static final double MAX_SHOT_VELOCITY = 7.85 / Math.cos(MAX_ANGLE); // (Max horizontal velocity / cosine)
-
+    static final double YAW_RANGE_OFFSET = Math.toRadians(-45);
     static final double YAW_TPR = 8192 * 5.75;
     static final double YAW_DIRECTION = -1;
 
     static final vec2 BLUE_BASKET = new vec2(-1.70, 1.70);
     static final vec2 RED_BASKET = new vec2(1.70, 1.70);
 
-    public static final class Basket {
-        final vec2 offset;
-        final vec2 direction;
+    public Shooter shooter;
 
-        private Basket(vec2 offset, vec2 direction) {
-            this.offset = offset;
-            this.direction = direction;
-        }
-    }
+    Servo stopper;
+    Servo pitch;
+
+    CRServo yaw;
+    DcMotor yawEncoder;
+    PIDFController yawPIDF = new PIDFController(3, 0, 0.1);
 
     public double yawOffset = 0;
 
-    public DcMotorEx shooter;
-    PIDFController shooterPIDF = new PIDFController(0.05, 0, 0, 1 / MAX_SHOOTER_RPM);
-    DcMotor yawEncoder;
-
-    Servo pitch;
-    CRServo yaw;
-    public Servo stopper;
-
     public Turret(HardwareMap hardwareMap) {
-        shooter = hardwareMap.get(DcMotorEx.class, "shooter");
+        shooter = new Shooter(hardwareMap.get(DcMotorEx.class, "shooter"));
+
+        stopper = hardwareMap.get(Servo.class, "stopper");
+        pitch = hardwareMap.get(Servo.class, "turretPitch");
+
+        yaw = hardwareMap.get(CRServo.class, "turretYaw");
         yawEncoder = hardwareMap.get(DcMotor.class, "frontLeft");
 
-        pitch = hardwareMap.get(Servo.class, "turretPitch");
-        yaw = hardwareMap.get(CRServo.class, "turretYaw");
-        stopper = hardwareMap.get(Servo.class, "stopper");
-
-        shooter.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
-        shooter.setDirection(DcMotorEx.Direction.REVERSE);
         pitch.setDirection(Servo.Direction.REVERSE);
-
         pitch.setPosition(0);
 
         yawEncoder.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         yawEncoder.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
     }
 
-    private double[] coeffs(vec2 target, double velocity) {
-        return new double[]{
-                (GRAVITY * target.x * target.x) / (2 * velocity * velocity),
-                -target.x,
-                target.y + (GRAVITY * target.x * target.x) / (2 * velocity * velocity)
-        };
-    }
+    public static class Basket {
+        vec2 distance;
+        vec2 shotDistance;
 
-    public double shooterRPM() {
-        return shooter.getVelocity() / SHOOTER_TPR * 60;
-    }
-
-    public double shooterVelocity() {
-        return shooterRPM() / MAX_SHOOTER_RPM * MAX_SHOT_VELOCITY;
-    }
-
-    public double angleTo(vec2 target, double velocity) {
-        double[] coeffs = coeffs(target, velocity);
-        double sqrtD = Math.sqrt(coeffs[1] * coeffs[1] - 4 * coeffs[0] * coeffs[2]);
-
-        return Math.atan((-coeffs[1] - sqrtD) / (2 * coeffs[0]));
-    }
-
-    public Basket getBasket(Robot.Alliance alliance, vec3 robotPosition, double robotHeading) {
-        if (alliance == Robot.Alliance.UNKNOWN) return null;
-
-        vec2 basket = alliance == Robot.Alliance.RED ? RED_BASKET : BLUE_BASKET;
-        vec2 offset = new vec2(
-                Math.hypot(
-                        basket.x - robotPosition.x,
-                        basket.y - robotPosition.z
-                ),
-                BASKET_HEIGHT - TURRET_HEIGHT
-        );
-
-        vec2 direction = new vec2(
-                angleTo(offset, shooterVelocity()),
-                Math.atan2(
-                        basket.y - robotPosition.z,
-                        basket.x - robotPosition.x
-                ) - Math.PI / 2.0 - robotHeading
-        );
-
-        return new Basket(offset, direction);
-    }
-
-    public double getYaw() {
-        return YAW_DIRECTION * yawEncoder.getCurrentPosition() / YAW_TPR * 2 * Math.PI;
-    }
-
-    public void aimbot(Basket basket, Telemetry telemetry) {
-        if (!Double.isNaN(basket.direction.x)) {
-            double servoPos = (basket.direction.x - MAX_ANGLE) / (MIN_ANGLE - MAX_ANGLE);
-
-            if (servoPos > 1) servoPos = 1;
-            if (servoPos < 0) servoPos = 0;
-
-            this.pitch.setPosition(servoPos);
+        private Basket(vec2 position, vec3 robotPosition) {
+            distance = new vec2(position.x - robotPosition.x, position.y - robotPosition.z);
+            shotDistance = new vec2(
+                    Math.hypot(position.x - robotPosition.x, position.y - robotPosition.z),
+                    BASKET_HEIGHT - TURRET_HEIGHT
+            );
         }
 
-        double currentYaw = getYaw();
-        double targetYaw = basket.direction.y + yawOffset;
+        public double shotVelocity(double theta) {
+            double t = Math.sqrt((2 * (shotDistance.x * Math.tan(theta)) - shotDistance.y) / GRAVITY);
+            return shotDistance.x / (t * Math.cos(theta));
+        }
 
-        double rangeOffset = Math.toRadians(45);
+        public double[] shotAngles(double velocity) {
+            double a = (Math.pow(shotDistance.x, 2) * GRAVITY) / (2 * Math.pow(velocity, 2));
+            double b = -shotDistance.x;
+            double c = a + shotDistance.y;
+
+            double sqrtD = Math.sqrt(Math.pow(b, 2) - 4*a*c);
+
+            double tan1 = (-b - sqrtD) / (2*a);
+            double tan2 = (-b + sqrtD) / (2*a);
+
+            return new double[]{Math.atan(tan1), Math.atan(tan2)};
+        }
+    }
+
+    public static class Shooter {
+        static final double TPR = 28;
+        static final double RATIO = 16 / 20.0;
+        static final double RADIUS = 0.045;
+        static final double RPM = 6000;
+
+        static final double ARTIFACT_MASS = 0.0748;
+        static final double ARTIFACT_COMPRESSION = 0.008;
+        static final double ARTIFACT_RADIUS = 0.127;
+        static final double ARTIFACT_YOUNG_MODULUS = 1.4 * 1E9;
+        static final double ARTIFACT_AREA_OF_CONTACT = 5.3 * 1E-6;
+
+        public static final double COMPRESSION_ACCEL = (
+                ARTIFACT_YOUNG_MODULUS * ARTIFACT_AREA_OF_CONTACT * ARTIFACT_COMPRESSION
+        ) / (ARTIFACT_MASS * 2 * ARTIFACT_RADIUS);
+
+        PIDFController pidf = new PIDFController(1.5, 0, 0, 1 / (RPM * RATIO / 60.0 * (2 * Math.PI) * RADIUS));
+        DcMotorEx motor;
+
+        private Shooter(DcMotorEx motor) {
+            motor.setDirection(DcMotorEx.Direction.REVERSE);
+
+            motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+            this.motor = motor;
+        }
+
+        double getWheelRPM() {
+            return motor.getVelocity() / (TPR * RATIO) * 60;
+        }
+
+        double getWheelVelocity() {
+            double omega = getWheelRPM() / 60.0 * (2 * Math.PI);
+            return omega * RADIUS;
+        }
+
+        public double withCompression(double velocity) {
+            return Math.sqrt(RADIUS * (Math.pow(velocity, 2) / RADIUS + COMPRESSION_ACCEL));
+        }
+
+        void setPower(double power) {
+            motor.setPower(power);
+        }
+
+        void setVelocity(double velocity, double delta, Telemetry telemetry) {
+            motor.setPower(pidf.update(velocity, getWheelVelocity(), delta));
+            telemetry.addData("shooter velocity", getWheelVelocity());
+        }
+    }
+
+    public Basket getBasket(Robot.Alliance alliance, vec3 robotPosition) {
+        if (alliance == Robot.Alliance.UNKNOWN) return null;
+        return new Basket(alliance == Robot.Alliance.RED ? RED_BASKET : BLUE_BASKET, robotPosition);
+    }
+
+    public void lockYaw(Basket basket, double robotYaw, double delta) {
+        double currentYaw = robotYaw + yawEncoder.getCurrentPosition() * YAW_DIRECTION / YAW_TPR * (2 * Math.PI);
+        double targetYaw = Math.atan2(basket.distance.y, basket.distance.x) - Math.PI / 2 + yawOffset;
 
         targetYaw = Math.atan2(
-                Math.sin(targetYaw + rangeOffset),
-                Math.cos(targetYaw + rangeOffset)
-        ) - rangeOffset;
+                Math.sin(targetYaw - YAW_RANGE_OFFSET),
+                Math.cos(targetYaw - YAW_RANGE_OFFSET)
+        ) + YAW_RANGE_OFFSET;
 
-        double yawError = targetYaw - currentYaw;
-
-        this.yaw.setPower(5 * yawError / Math.PI);
-
-        if (telemetry != null) {
-            telemetry.addLine("Turret");
-            telemetry.addData("shooter x-velocity (ms^-1)", shooterVelocity() * Math.cos(MAX_ANGLE));
-            telemetry.addData("shooter motor (rpm)", shooter.getVelocity() / 28.0 * 60);
-            telemetry.addData("shooter flywheel (rpm)", shooterRPM());
-            telemetry.addData("x distance (m)", basket.offset.x);
-            telemetry.addData("y distance (m)", basket.offset.y);
-            telemetry.addData("yaw error (deg)", Math.toDegrees(yawError));
-            telemetry.addData("current yaw (deg)", Math.toDegrees(currentYaw));
-            telemetry.addData("yaw (deg)", Math.toDegrees(basket.direction.y));
-            telemetry.addData("pitch (deg)", Math.toDegrees(basket.direction.x));
-            telemetry.addLine();
-        }
+        yaw.setPower(yawPIDF.update(targetYaw, currentYaw, delta));
     }
 
-    public void aimbot(Basket basket) {
-        this.aimbot(basket, null);
-    }
+    public void lockPitch(Basket basket, double artifactVelocity) {
+        double[] angles = basket.shotAngles(artifactVelocity);
+        double angle = Double.NaN;
 
-    public void shoot(Basket basket, double delta) {
-        final double VEL_TO_RPM = 1 / MAX_SHOT_VELOCITY * MAX_SHOOTER_RPM;
-
-        double power;
-
-        if (basket.offset.x < 2.6) {
-            power = shooterPIDF.update(4.0 / Math.cos(MAX_ANGLE) * VEL_TO_RPM, shooterRPM(), delta);
-        } else {
-            power = shooterPIDF.update(4.8 / Math.cos(MAX_ANGLE) * VEL_TO_RPM, shooterRPM(), delta);
+        for (double a : angles) {
+            if (a < MIN_ANGLE || a > MAX_ANGLE) continue;
+            if (a > angle || Double.isNaN(angle)) angle = a;
         }
 
-        shooter.setPower(power);
+        if (Double.isNaN(angle)) return;
+
+        double alpha = (angle - MIN_ANGLE) / (MAX_ANGLE - MIN_ANGLE);
+        pitch.setPosition(1 - alpha);
     }
 
     public void shoot(double power) {
         shooter.setPower(power);
     }
 
-    public boolean canShoot(Basket basket) {
-        return basket.direction.x >= MIN_ANGLE && basket.direction.x <= MAX_ANGLE;
+    public void shoot(double velocity, double delta, Telemetry telemetry) {
+        shooter.setVelocity(velocity, delta, telemetry);
+    }
+
+    public void retainStopper() {
+        stopper.setPosition(0);
+    }
+
+    public void releaseStopper() {
+        stopper.setPosition(1);
     }
 }

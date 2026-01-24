@@ -60,20 +60,13 @@ public abstract class Robot extends OpMode {
             } catch (InterruptedException ignored) {  }
 
             state = SharedState.get();
-
-            if (state != null) {
-                odometry.setPosition(state.position, state.rotation);
-            } else if (getAlliance() == Alliance.RED) {
-                odometry.setPosition(new vec3(0.42, 0, -1.52));
-            } else if (getAlliance() == Alliance.BLUE) {
-                odometry.setPosition(new vec3(-0.42, 0, -1.52));
-            }
+            // TODO: state/starting positions
         }
 
         turret = new Turret(hardwareMap);
         visor = new Visor(hardwareMap, turret);
 
-        if (state != null) turret.yawOffset = -state.turretYaw;
+        // TODO: restore turret state if present
     }
 
     public boolean usingPedroPathing() {
