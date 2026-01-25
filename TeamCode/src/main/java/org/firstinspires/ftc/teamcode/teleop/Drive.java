@@ -6,7 +6,7 @@ import org.firstinspires.ftc.teamcode.Turret;
 import org.firstinspires.ftc.teamcode.ZoneManager;
 
 public class Drive extends Robot {
-    static final boolean SINGLE_GAMEPAD_CONTROL = false;
+    static final boolean SINGLE_GAMEPAD_CONTROL = true;
 
     boolean shooting = false;
     double shooterBackspin = 0;
@@ -42,7 +42,7 @@ public class Drive extends Robot {
 
             collectorBackspin = gamepad1.left_bumper;
 
-            turret.yawOffset += ((gamepad1.x ? 1 : 0) - (gamepad1.a ? 1 : 0)) * delta;
+            turret.yawOffset += ((gamepad1.x ? 1 : 0) - (gamepad1.b ? 1 : 0)) * delta;
             if (gamepad1.back) turret.yawOffset = 0;
         } else {
             shooting = gamepad2.right_trigger > 0.2;
@@ -66,21 +66,23 @@ public class Drive extends Robot {
         boolean canShoot = turret.canShoot(basket);
 
         if (basket != null) {
-            turret.lock(basket, odometry.rotation.y, delta);
+            turret.lock(basket, odometry.rotation.y, delta, telemetry);
 
-            if (shooting) {
+            if (shooterBackspin > 0) {
+                turret.shoot(-shooterBackspin);
+            } else if (SINGLE_GAMEPAD_CONTROL && gamepad1.a || gamepad2.a) {
+                turret.shoot(1);
+            } else if (shooting) {
                 turret.shoot(basket, delta);
-                turret.releaseStopper();
             } else {
                 turret.shoot(collecting ? -0.5 : 0);
-                turret.retainStopper();
             }
         }
 
-        if (shooting && canShoot || !shooting && collecting) {
-            collector.setPower(1);
-        } else if (collectorBackspin) {
+        if (collectorBackspin) {
             collector.setPower(-1);
+        } else if (shooting && canShoot || !shooting && collecting) {
+            collector.setPower(1);
         } else {
             collector.setPower(0);
         }
@@ -89,6 +91,10 @@ public class Drive extends Robot {
         telemetry.addData("x (m)", odometry.position.x);
         telemetry.addData("z (m)", odometry.position.z);
         telemetry.addData("yaw (deg)", Math.toDegrees(odometry.rotation.y));
+        telemetry.addLine();
+        telemetry.addLine("Zones");
+        telemetry.addData("in close shooting zone?", isInZone(ZoneManager.SHOOTING_ZONE_CLOSE));
+        telemetry.addData("in far shooting zone?", isInZone(ZoneManager.SHOOTING_ZONE_FAR));
         telemetry.update();
     }
 

@@ -86,7 +86,7 @@ public abstract class Robot extends OpMode {
 
     public abstract void loop();
 
-    public boolean isTouchingZone(ZoneManager.Zone zone) {
+    public boolean isInZone(ZoneManager.Zone zone) {
         vec2 position;
         double heading;
 

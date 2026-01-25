@@ -24,25 +24,38 @@ public class ZoneManager {
         vec2 b;
         vec2 c;
 
+        double area;
+
         public TriangleZone(vec2 a, vec2 b, vec2 c) {
             this.a = a;
             this.b = b;
             this.c = c;
         }
 
+        private boolean isInside(vec2 p) {
+            vec2 ab = new vec2(b.x - a.x, b.y - a.y);
+            vec2 bc = new vec2(c.x - b.x, c.y - b.y);
+            vec2 ca = new vec2(a.x - c.x, a.y - c.y);
+
+            vec2 ap = new vec2(p.x - a.x, p.y - a.y);
+            vec2 bp = new vec2(p.x - b.x, p.y - b.y);
+            vec2 cp = new vec2(p.x - c.x, p.y - c.y);
+
+            double signAB = Math.signum(ab.x * ap.y - ab.y * ap.x);
+            double signBC = Math.signum(bc.x * bp.y - bc.y * bp.y);
+            double signCA = Math.signum(ca.x * cp.y - ca.y * cp.x);
+
+            return signAB == signBC && signBC == signCA;
+        }
+
         public boolean intersects(OBB obb, vec2 origin, double heading) {
-            vec2 localA = new vec2(a.x - (origin.x + obb.center.x), a.y - (origin.y + obb.center.y)).rotate(-heading);
-            vec2 localB = new vec2(b.x - (origin.x + obb.center.x), b.y - (origin.y + obb.center.y)).rotate(-heading);
-            vec2 localC = new vec2(c.x - (origin.x + obb.center.x), c.y - (origin.y + obb.center.y)).rotate(-heading);
+            vec2[] corners = obb.corners(origin, heading);
 
-            vec2 ab = new vec2(localB.x - localA.x, localB.y - localA.x);
-            if (ZoneManager.lineIntersectsRect(obb.size, localA, ab)) return true;
+            for (vec2 corner : corners) {
+                if (isInside(corner)) return true;
+            }
 
-            vec2 ac = new vec2(localC.x - localA.x, localC.y - localA.y);
-            if (ZoneManager.lineIntersectsRect(obb.size, localA, ac)) return true;
-
-            vec2 bc = new vec2(localC.x - localB.x, localC.y - localB.y);
-            return ZoneManager.lineIntersectsRect(obb.size, localB, bc);
+            return false;
         }
     }
 
@@ -56,25 +69,16 @@ public class ZoneManager {
         }
 
         public boolean intersects(OBB obb, vec2 origin, double heading) {
-            vec2 localCenter = new vec2(center.x - (origin.x + obb.center.x), center.y - (origin.y + obb.center.y)).rotate(-heading);
-            vec2 localSize = new vec2(size.x / 2, size.y / 2).rotate(-heading);
+            vec2[] corners = obb.corners(origin, heading);
 
-            vec2 localA = new vec2(localCenter.x - localSize.x, localCenter.y - localSize.y);
-            vec2 localB = new vec2(localCenter.x - localSize.x, localCenter.y + localSize.y);
-            vec2 localC = new vec2(localCenter.x + localSize.x, localCenter.y + localSize.y);
-            vec2 localD = new vec2(localCenter.x - localSize.x, localCenter.y + localSize.y);
+            for (vec2 corner : corners) {
+                boolean inX = corner.x >= center.x - size.x / 2 && corner.x <= center.x + size.x / 2;
+                boolean inY = corner.y >= center.y - size.y / 2 && corner.y <= center.y + size.y / 2;
 
-            vec2 ab = new vec2(localB.x - localA.x, localB.y - localA.y);
-            if (ZoneManager.lineIntersectsRect(obb.size, localA, ab)) return true;
+                if (inX && inY) return true;
+            }
 
-            vec2 ad = new vec2(localD.x - localA.x, localD.y - localA.y);
-            if (ZoneManager.lineIntersectsRect(obb.size, localA, ad)) return true;
-
-            vec2 bc = new vec2(localC.x - localB.x, localC.y - localB.y);
-            if (ZoneManager.lineIntersectsRect(obb.size, localB, bc)) return true;
-
-            vec2 cd = new vec2(localD.x - localC.x, localD.y - localC.y);
-            return ZoneManager.lineIntersectsRect(obb.size, localC, cd);
+            return false;
         }
     }
 
@@ -86,17 +90,17 @@ public class ZoneManager {
             this.center = center;
             this.size = size;
         }
-    }
 
-    private static boolean lineIntersectsRect(vec2 rectSize, vec2 lineOrigin, vec2 lineDir) {
-        double tx1 = (rectSize.x / 2 - lineOrigin.x) / lineDir.x;
-        double tx2 = (-rectSize.x / 2 - lineOrigin.x) / lineDir.x;
-        double ty1 = (rectSize.y / 2 - lineOrigin.y) / lineDir.y;
-        double ty2 = (-rectSize.y / 2 - lineOrigin.y) / lineDir.y;
+        public vec2[] corners(vec2 origin, double heading) {
+            vec2 offset = new vec2(center.x, center.y).rotate(heading);
+            vec2 size = new vec2(this.size.x, this.size.y).rotate(heading);
 
-        double tMin = Math.max(Math.min(tx1, tx2), Math.min(ty1, ty2));
-        double tMax = Math.min(Math.max(tx1, tx2), Math.max(ty1, ty2));
-
-        return tMin >= 0 && tMax <= 1 && tMin >= tMax;
+            return new vec2[]{
+                    new vec2(origin.x + offset.x - size.x / 2, origin.y + offset.y - size.y / 2),
+                    new vec2(origin.x + offset.x - size.x / 2, origin.y + offset.y + size.y / 2),
+                    new vec2(origin.x + offset.x + size.x / 2, origin.y + offset.y + size.y / 2),
+                    new vec2(origin.x + offset.x + size.x / 2, origin.y + offset.y - size.y / 2),
+            };
+        }
     }
 }
