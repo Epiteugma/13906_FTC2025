@@ -1,7 +1,6 @@
 package org.firstinspires.ftc.teamcode.teleop;
 
 import org.firstinspires.ftc.teamcode.Robot;
-import org.firstinspires.ftc.teamcode.SharedState;
 import org.firstinspires.ftc.teamcode.Turret;
 import org.firstinspires.ftc.teamcode.ZoneManager;
 
@@ -63,20 +62,16 @@ public class Drive extends Robot {
         backRight.setPower(y + x + w);
 
         Turret.Basket basket = turret.getBasket(getAlliance(), odometry.position);
-        boolean canShoot = turret.canShoot(basket);
+        boolean canShoot = turret.canShoot(basket) && turret.isYawLocked(basket, odometry.rotation.y);
 
-        if (basket != null) {
-            turret.lock(basket, odometry.rotation.y, delta, telemetry);
+        turret.lock(basket, odometry.rotation.y, odometry.angularVel.y, delta, telemetry);
 
-            if (shooterBackspin > 0) {
-                turret.shoot(-shooterBackspin);
-            } else if (SINGLE_GAMEPAD_CONTROL && gamepad1.a || gamepad2.a) {
-                turret.shoot(1);
-            } else if (shooting) {
-                turret.shoot(basket, delta);
-            } else {
-                turret.shoot(collecting ? -0.5 : 0);
-            }
+        if (shooterBackspin > 0) {
+            turret.shoot(-shooterBackspin);
+        } else if (shooting) {
+            turret.shoot(basket, delta);
+        } else {
+            turret.shoot(collecting ? -0.5 : 0);
         }
 
         if (collectorBackspin) {
@@ -98,8 +93,4 @@ public class Drive extends Robot {
         telemetry.update();
     }
 
-    @Override
-    public void stop() {
-        SharedState.clear();
-    }
 }

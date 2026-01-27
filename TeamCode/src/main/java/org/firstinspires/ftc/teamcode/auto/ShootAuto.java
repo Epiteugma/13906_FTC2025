@@ -1,7 +1,6 @@
 package org.firstinspires.ftc.teamcode.auto;
 
 import org.firstinspires.ftc.teamcode.Robot;
-import org.firstinspires.ftc.teamcode.SharedState;
 import org.firstinspires.ftc.teamcode.Turret;
 
 import dev.zedboy.greatness.math.vec3;
@@ -36,7 +35,7 @@ public class ShootAuto extends Robot {
         Turret.Basket basket = turret.getBasket(getAlliance(), odometry.position);
         boolean canShoot = turret.canShoot(basket);
 
-        turret.lock(basket, odometry.rotation.y, delta);
+        turret.lock(basket, odometry.rotation.y, 0, delta);
 
         if (didShoot < 3) turret.shoot(basket, delta);
         else turret.shoot(0);
@@ -59,11 +58,6 @@ public class ShootAuto extends Robot {
 
         telemetry.addData("didShoot", didShoot);
         telemetry.update();
-    }
-
-    @Override
-    public void stop() {
-        SharedState.save(odometry.position, odometry.rotation, 0);
     }
 
 }

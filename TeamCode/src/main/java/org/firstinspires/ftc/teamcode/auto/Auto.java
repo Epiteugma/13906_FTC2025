@@ -6,7 +6,6 @@ import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.Path;
 
 import org.firstinspires.ftc.teamcode.Robot;
-import org.firstinspires.ftc.teamcode.SharedState;
 import org.firstinspires.ftc.teamcode.Turret;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
@@ -101,7 +100,7 @@ public class Auto extends Robot {
         boolean canShoot = turret.canShoot(basket);
 
         if (state == State.MOVING_TO_SHOOT || state == State.SHOOTING) {
-            turret.lock(basket, robotPose.getHeading() - Math.PI / 2.0, delta);
+            turret.lock(basket, robotPose.getHeading() - Math.PI / 2.0, 0, delta);
             turret.releaseStopper();
         } else {
             turret.retainStopper();
@@ -200,19 +199,5 @@ public class Auto extends Robot {
                 follower.followPath(createPath(artifactsEnd, pickups == 2 ? artifacts : shoot));
                 break;
         }
-    }
-
-    @Override
-    public void stop() {
-        if (follower == null) return;
-
-        Pose robotPose = follower.getPose();
-        vec3 position = new vec3(
-                (robotPose.getX() - 72) * INCH_TO_CM / 100.0,
-                0,
-                (robotPose.getY() - 72) * INCH_TO_CM / 100.0
-        );
-
-        SharedState.save(position, new vec3(0, robotPose.getHeading() - Math.PI / 2.0), 0);
     }
 }

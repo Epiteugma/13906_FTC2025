@@ -9,6 +9,7 @@ import org.firstinspires.ftc.teamcode.gobilda.GoBildaPinpointDriver;
 
 import dev.zedboy.greatness.Odometry;
 import dev.zedboy.greatness.math.vec2;
+import dev.zedboy.greatness.math.vec3;
 
 public abstract class Robot extends OpMode {
     private static final ZoneManager.OBB[] COLLISION_BOXES = new ZoneManager.OBB[]{
@@ -54,8 +55,6 @@ public abstract class Robot extends OpMode {
         collector = hardwareMap.get(DcMotor.class, "collector");
         collector.setDirection(DcMotor.Direction.REVERSE);
 
-        SharedState state = null;
-
         if (!usingPedroPathing()) {
             GoBildaPinpointDriver pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
             pinpoint.setOffsets(-0.062, -0.18, DistanceUnit.METER);
@@ -66,8 +65,16 @@ public abstract class Robot extends OpMode {
                 Thread.sleep(500);
             } catch (InterruptedException ignored) {  }
 
-            state = SharedState.get();
-            // TODO: state/starting positions
+            // TODO: shared state
+
+            switch (getAlliance()) {
+                case RED:
+                    odometry.setPosition(new vec3(0.4, 0, -1.5));
+                    break;
+                case BLUE:
+                    odometry.setPosition(new vec3(-0.4, 0, -1.5));
+                    break;
+            }
         }
 
         turret = new Turret(hardwareMap);

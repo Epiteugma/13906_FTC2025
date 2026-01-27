@@ -35,7 +35,7 @@ public class Turret {
 
     CRServo yaw;
     DcMotor yawEncoder;
-    PIDFController yawPIDF = new PIDFController(3, 0, 0.1);
+    PIDFController yawPIDF = new PIDFController(1.5, 0, 0.05);
 
     public double yawOffset = 0;
 
@@ -95,16 +95,8 @@ public class Turret {
 
         static final double MAX_VELOCITY = RPM * RATIO / 60.0 * (2 * Math.PI) * RADIUS;
 
-        // Lockheed Martin, huh?
-        static final double ARTIFACT_MASS = 0.0748;
-        static final double ARTIFACT_COMPRESSION = 0.008;
-        static final double ARTIFACT_RADIUS = 0.127;
-        static final double ARTIFACT_YOUNG_MODULUS = 1.4 * 1E9;
-        static final double ARTIFACT_AREA_OF_CONTACT = 5.3 * 1E-6;
-
-        public static final double COMPRESSION_ACCEL = (
-                ARTIFACT_YOUNG_MODULUS * ARTIFACT_AREA_OF_CONTACT * ARTIFACT_COMPRESSION
-        ) / (ARTIFACT_MASS * 2 * ARTIFACT_RADIUS);
+        static final double VELOCITY_FRICTION_LOSS = 0.5;
+        static final double VELOCITY_COMPRESSION_LOSS = 2.7;
 
         PIDFController pidf = new PIDFController(1.5, 0, 0, 1 / MAX_VELOCITY);
         DcMotorEx motor;
@@ -127,12 +119,12 @@ public class Turret {
             return omega * RADIUS;
         }
 
-        public double withCompression(double velocity) {
-            return Math.sqrt(RADIUS * (Math.pow(velocity, 2) / RADIUS + COMPRESSION_ACCEL));
+        public double toShooterVelocity(double velocity) {
+            return velocity / (1 - VELOCITY_FRICTION_LOSS) + VELOCITY_COMPRESSION_LOSS;
         }
 
-        public double withoutCompression(double velocity) {
-            return Math.sqrt(RADIUS * (Math.pow(velocity, 2) / RADIUS - COMPRESSION_ACCEL));
+        public double toArtifactVelocity(double velocity) {
+            return Math.max(0, (velocity - VELOCITY_COMPRESSION_LOSS) * (1 - VELOCITY_FRICTION_LOSS));
         }
 
         void setPower(double power) {
@@ -149,8 +141,19 @@ public class Turret {
         return new Basket(alliance == Robot.Alliance.RED ? RED_BASKET : BLUE_BASKET, robotPosition);
     }
 
-    public void lockYaw(Basket basket, double robotYaw, double delta, Telemetry telemetry) {
-        double currentYaw = robotYaw + yawEncoder.getCurrentPosition() * YAW_DIRECTION / YAW_TPR * (2 * Math.PI);
+    private double currentYaw(double robotYaw) {
+        return robotYaw + yawEncoder.getCurrentPosition() * YAW_DIRECTION / YAW_TPR * (2 * Math.PI);
+    }
+
+    public boolean isYawLocked(Basket basket, double robotYaw) {
+        double yawError = Math.atan2(basket.distance.y, basket.distance.x) - Math.PI / 2 + yawOffset - currentYaw(robotYaw);
+        yawError = Math.atan2(Math.sin(yawError), Math.cos(yawError));
+
+        return Math.abs(yawError) < Math.toRadians(5);
+    }
+
+    public void lockYaw(Basket basket, double robotYaw, double robotYawVelocity, double delta, Telemetry telemetry) {
+        double currentYaw = currentYaw(robotYaw);
         double targetYaw = Math.atan2(basket.distance.y, basket.distance.x) - Math.PI / 2 + yawOffset;
 
         targetYaw = Math.atan2(
@@ -158,15 +161,15 @@ public class Turret {
                 Math.cos(targetYaw - YAW_RANGE_OFFSET)
         ) + YAW_RANGE_OFFSET;
 
-        yaw.setPower(yawPIDF.update(targetYaw, currentYaw, delta));
+        yaw.setPower(yawPIDF.update(targetYaw - currentYaw, 0.1 * robotYawVelocity, delta));
     }
 
-    public void lockYaw(Basket basket, double robotYaw, double delta) {
-        lockYaw(basket, robotYaw, delta, null);
+    public void lockYaw(Basket basket, double robotYaw,  double robotYawVelocity, double delta) {
+        lockYaw(basket, robotYaw, robotYawVelocity, delta, null);
     }
 
     public void lockPitch(Basket basket, double wheelVelocity, Telemetry telemetry) {
-        double artifactVelocity = shooter.withoutCompression(wheelVelocity);
+        double artifactVelocity = shooter.toArtifactVelocity(wheelVelocity);
         double[] angles = basket.shotAngles(artifactVelocity);
         double angle = Double.NaN;
 
@@ -212,7 +215,7 @@ public class Turret {
     }
 
     public void shoot(Basket basket, double delta) {
-        shoot(shooter.withCompression(targetVelocity(basket)), delta);
+        shoot(shooter.toShooterVelocity(targetVelocity(basket)), delta);
     }
 
     private double targetVelocity(Basket basket) {
@@ -223,31 +226,33 @@ public class Turret {
         }
     }
 
-    public void lock(Basket basket, double robotYaw, double delta, Telemetry telemetry) {
+    public void lock(Basket basket, double robotYaw, double robotYawVelocity, double delta, Telemetry telemetry) {
         double velocity = targetVelocity(basket);
 
         if (telemetry != null) {
             telemetry.addLine("Turret");
             telemetry.addData("target ball velocity (ms^-1)", velocity);
-            telemetry.addData("current ball velocity (ms^-1)", shooter.withoutCompression(shooter.getWheelVelocity()));
-            telemetry.addData("target shooter velocity (ms^-1)", shooter.withCompression(velocity));
+            telemetry.addData("current ball velocity (ms^-1)", shooter.toArtifactVelocity(shooter.getWheelVelocity()));
+            telemetry.addData("target shooter velocity (ms^-1)", shooter.toShooterVelocity(velocity));
             telemetry.addData("current shooter velocity (ms^-1)", shooter.getWheelVelocity());
             telemetry.addData("current shooter velocity (rpm)", shooter.getWheelRPM());
         }
 
-        lockYaw(basket, robotYaw, delta, telemetry);
+        lockYaw(basket, robotYaw, robotYawVelocity, delta, telemetry);
         lockPitch(basket, shooter.getWheelVelocity() * 1.05, telemetry);
 
         if (telemetry != null) telemetry.addLine();
     }
 
-    public void lock(Basket basket, double robotYaw, double delta) {
-        lock(basket, robotYaw, delta, null);
+    public void lock(Basket basket, double robotYaw, double robotYawVelocity, double delta) {
+        lock(basket, robotYaw, robotYawVelocity, delta, null);
     }
 
     public boolean canShoot(Basket basket) {
-        double targetVelocity = shooter.withCompression(targetVelocity(basket));
-        return targetVelocity - shooter.getWheelVelocity() < targetVelocity * 0.05;
+        double targetVelocity = shooter.toShooterVelocity(targetVelocity(basket));
+        boolean farEnough = basket.shotDistance.x > 1;
+
+        return targetVelocity - shooter.getWheelVelocity() < targetVelocity * 0.02 && farEnough;
     }
 
     public void retainStopper() {
