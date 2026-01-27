@@ -96,7 +96,7 @@ public class Turret {
         static final double MAX_VELOCITY = RPM * RATIO / 60.0 * (2 * Math.PI) * RADIUS;
 
         static final double VELOCITY_FRICTION_LOSS = 0.5;
-        static final double VELOCITY_COMPRESSION_LOSS = 2.7;
+        static final double VELOCITY_COMPRESSION_LOSS = 3;
 
         PIDFController pidf = new PIDFController(1.5, 0, 0, 1 / MAX_VELOCITY);
         DcMotorEx motor;
