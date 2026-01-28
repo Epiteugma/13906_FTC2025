@@ -35,12 +35,15 @@ public class Turret {
 
     CRServo yaw;
     DcMotor yawEncoder;
-    PIDFController yawPIDF = new PIDFController(1.5, 0, 0.05);
+    PIDFController yawPIDF = new PIDFController(1.75, 0, 0.05);
 
     public double yawOffset = 0;
 
     public Turret(HardwareMap hardwareMap) {
-        shooter = new Shooter(hardwareMap.get(DcMotorEx.class, "shooter"));
+        shooter = new Shooter(
+                hardwareMap.get(DcMotorEx.class, "shooter"),
+                hardwareMap.get(DcMotorEx.class, "shooterB")
+        );
 
         stopper = hardwareMap.get(Servo.class, "stopper");
         pitch = hardwareMap.get(Servo.class, "turretPitch");
@@ -89,25 +92,26 @@ public class Turret {
 
     public static class Shooter {
         static final double TPR = 28;
-        static final double RATIO = 16 / 20.0;
+        static final double RATIO = 10 / 15.0; // 15 / 20.0;
+        static final double RATIO_B = 10 / 15.0;
         static final double RADIUS = 0.045;
         static final double RPM = 6000;
 
         static final double MAX_VELOCITY = RPM * RATIO / 60.0 * (2 * Math.PI) * RADIUS;
 
         static final double VELOCITY_FRICTION_LOSS = 0.5;
-        static final double VELOCITY_COMPRESSION_LOSS = 3;
+        static final double VELOCITY_COMPRESSION_LOSS = 3.7;
 
         PIDFController pidf = new PIDFController(1.5, 0, 0, 1 / MAX_VELOCITY);
-        DcMotorEx motor;
 
-        private Shooter(DcMotorEx motor) {
+        DcMotorEx motor;
+        DcMotorEx motorB;
+
+        private Shooter(DcMotorEx motor, DcMotorEx motorB) {
             motor.setDirection(DcMotorEx.Direction.REVERSE);
 
-            motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
             this.motor = motor;
+            this.motorB = motorB;
         }
 
         double getWheelRPM() {
@@ -129,10 +133,14 @@ public class Turret {
 
         void setPower(double power) {
             motor.setPower(power);
+            motorB.setPower(power * RATIO_B / RATIO);
         }
 
         void setVelocity(double velocity, double delta) {
-            motor.setPower(pidf.update(velocity, getWheelVelocity(), delta));
+            double power = pidf.update(velocity, getWheelVelocity(), delta);
+
+            motor.setPower(power);
+            motorB.setPower(power * RATIO_B / RATIO);
         }
     }
 
@@ -250,9 +258,7 @@ public class Turret {
 
     public boolean canShoot(Basket basket) {
         double targetVelocity = shooter.toShooterVelocity(targetVelocity(basket));
-        boolean farEnough = basket.shotDistance.x > 1;
-
-        return targetVelocity - shooter.getWheelVelocity() < targetVelocity * 0.02 && farEnough;
+        return targetVelocity - shooter.getWheelVelocity() < targetVelocity * 0.02;
     }
 
     public void retainStopper() {
