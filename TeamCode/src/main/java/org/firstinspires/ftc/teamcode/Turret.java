@@ -18,7 +18,7 @@ public class Turret {
 
     static final double GRAVITY = 9.81;
 
-    static final double BASKET_HEIGHT = 1.05;
+    static final double BASKET_HEIGHT = 1.1;
     static final double TURRET_HEIGHT = 0.33;
 
     static final double YAW_RANGE_OFFSET = Math.toRadians(-45);
@@ -92,7 +92,7 @@ public class Turret {
 
     public static class Shooter {
         static final double TPR = 28;
-        static final double RATIO = 10 / 15.0; // 15 / 20.0;
+        static final double RATIO = 10 / 15.0;
         static final double RATIO_B = 10 / 15.0;
         static final double RADIUS = 0.045;
         static final double RPM = 6000;
@@ -100,7 +100,7 @@ public class Turret {
         static final double MAX_VELOCITY = RPM * RATIO / 60.0 * (2 * Math.PI) * RADIUS;
 
         static final double VELOCITY_FRICTION_LOSS = 0.5;
-        static final double VELOCITY_COMPRESSION_LOSS = 3.7;
+        static final double VELOCITY_COMPRESSION_LOSS = 3.3;
 
         PIDFController pidf = new PIDFController(1.5, 0, 0, 1 / MAX_VELOCITY);
 
@@ -149,20 +149,20 @@ public class Turret {
         return new Basket(alliance == Robot.Alliance.RED ? RED_BASKET : BLUE_BASKET, robotPosition);
     }
 
-    private double currentYaw(double robotYaw) {
-        return robotYaw + yawEncoder.getCurrentPosition() * YAW_DIRECTION / YAW_TPR * (2 * Math.PI);
+    private double currentYaw() {
+        return yawEncoder.getCurrentPosition() * YAW_DIRECTION / YAW_TPR * (2 * Math.PI);
     }
 
     public boolean isYawLocked(Basket basket, double robotYaw) {
-        double yawError = Math.atan2(basket.distance.y, basket.distance.x) - Math.PI / 2 + yawOffset - currentYaw(robotYaw);
+        double yawError = Math.atan2(basket.distance.y, basket.distance.x) - Math.PI / 2 + yawOffset - (robotYaw + currentYaw());
         yawError = Math.atan2(Math.sin(yawError), Math.cos(yawError));
 
         return Math.abs(yawError) < Math.toRadians(5);
     }
 
     public void lockYaw(Basket basket, double robotYaw, double robotYawVelocity, double delta, Telemetry telemetry) {
-        double currentYaw = currentYaw(robotYaw);
-        double targetYaw = Math.atan2(basket.distance.y, basket.distance.x) - Math.PI / 2 + yawOffset;
+        double currentYaw = currentYaw();
+        double targetYaw = Math.atan2(basket.distance.y, basket.distance.x) - Math.PI / 2 - robotYaw + yawOffset;
 
         targetYaw = Math.atan2(
                 Math.sin(targetYaw - YAW_RANGE_OFFSET),
@@ -170,6 +170,11 @@ public class Turret {
         ) + YAW_RANGE_OFFSET;
 
         yaw.setPower(yawPIDF.update(targetYaw - currentYaw, 0.1 * robotYawVelocity, delta));
+
+        if (telemetry != null) {
+            telemetry.addData("current yaw (deg)", Math.toDegrees(currentYaw));
+            telemetry.addData("target yaw (deg)", Math.toDegrees(targetYaw));
+        }
     }
 
     public void lockYaw(Basket basket, double robotYaw,  double robotYawVelocity, double delta) {
@@ -247,7 +252,7 @@ public class Turret {
         }
 
         lockYaw(basket, robotYaw, robotYawVelocity, delta, telemetry);
-        lockPitch(basket, shooter.getWheelVelocity() * 1.05, telemetry);
+        lockPitch(basket, shooter.getWheelVelocity(), telemetry);
 
         if (telemetry != null) telemetry.addLine();
     }
@@ -258,7 +263,7 @@ public class Turret {
 
     public boolean canShoot(Basket basket) {
         double targetVelocity = shooter.toShooterVelocity(targetVelocity(basket));
-        return targetVelocity - shooter.getWheelVelocity() < targetVelocity * 0.02;
+        return shooter.getWheelVelocity() >= targetVelocity;
     }
 
     public void retainStopper() {

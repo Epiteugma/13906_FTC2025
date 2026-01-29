@@ -69,10 +69,10 @@ public abstract class Robot extends OpMode {
 
             switch (getAlliance()) {
                 case RED:
-                    odometry.setPosition(new vec3(0.4, 0, -1.5));
+                    odometry.setPosition(new vec3(0.4, 0, -1.6));
                     break;
                 case BLUE:
-                    odometry.setPosition(new vec3(-0.4, 0, -1.5));
+                    odometry.setPosition(new vec3(-0.4, 0, -1.6));
                     break;
             }
         }
