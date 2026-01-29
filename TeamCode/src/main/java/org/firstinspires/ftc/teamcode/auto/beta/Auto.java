@@ -5,6 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 
 import org.firstinspires.ftc.teamcode.Robot;
 
+import dev.zedboy.greatness.PIDFController;
 import dev.zedboy.greatness.Path;
 import dev.zedboy.greatness.PathBuilder;
 import dev.zedboy.greatness.math.vec3;
@@ -21,23 +22,26 @@ public class Auto extends Robot {
 
     @Override
     public void start() {
-        odometry.setPosition(new vec3(), new vec3());
+        odometry.setPosition(new vec3(-1.4, 0, 1.4), new vec3(0, Math.toRadians(45)));
 
-        drivetrain = new Mecanum(frontLeft, frontRight, backLeft, backRight, odometry);
+        drivetrain = new Mecanum(frontLeft, frontRight, backLeft, backRight);
         follower = new Follower(drivetrain, odometry);
 
-        drivetrain.translational.kP = 0.01;
-        drivetrain.lateral.kP = 0.01;
-        drivetrain.angular.kP = 0.01;
+        follower.maxTranslationalVelocity = 2.05;
+        follower.maxLateralVelocity = 1.66;
+        follower.trackWidth = 0.43;
 
-        drivetrain.translational.kF = 1 / 1.9207;
-        drivetrain.lateral.kF = 1 / 1.5814;
+        follower.translational.kP = 0.01;
+        follower.lateral.kP = 0.01;
+        follower.angular.kP = 0.05;
 
-        Path forward = new PathBuilder()
-                .lineTo(0, 0, 1)
-                .build();
-
-        follower.setPath(forward);
+        follower.setPath(
+                new PathBuilder()
+                        .startAt(-1.4, 0, 1.4)
+                        .startHeading(0, Math.toRadians(45), 0)
+                        .lineTo(0, 0, 0)
+                        .build()
+        );
     }
 
     @Override
@@ -45,7 +49,12 @@ public class Auto extends Robot {
         double delta = (System.nanoTime() - timer) / 1E9;
         timer = System.nanoTime();
 
-        follower.update(delta);
+        follower.update(delta, telemetry);
+        telemetry.update();
+
+        if (!follower.done()) return;
+
+        // TODO: logic lmao
     }
 
 }
