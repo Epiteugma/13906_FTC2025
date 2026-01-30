@@ -4,6 +4,8 @@ import dev.zedboy.greatness.math.interp.Lerp;
 import dev.zedboy.greatness.math.vec3;
 
 public class Bezier {
+    final double eps = 1e-14;
+
     vec3 start;
     vec3 control;
     vec3 end;
@@ -21,8 +23,6 @@ public class Bezier {
     // modified to only return the first real root
     // Public domain - http://math.ivanovo.ac.ru/dalgebra/Khashin/index.html
     private double solveCubic(double a, double b, double c) {
-        final double eps = 1e-14;
-
         double q = (a*a - 3*b) / 9;
         double r = (a*(2*a*a - 9*b) + 27*c) / 54;
 
@@ -62,7 +62,7 @@ public class Bezier {
         double c = 4 * (L.x*L.x + L.y*L.y + L.z*L.z) + 2 * (K.x * M.x + K.y * M.y + K.z * M.z);
         double d = 2 * (L.x * M.x + L.y * M.y + L.z * M.z);
 
-        if (a == 0) return -d / c; // straight line
+        if (Math.abs(a) < eps) return -d / c; // straight line
 
         double t = solveCubic(b / a, c / a, d / a);
 

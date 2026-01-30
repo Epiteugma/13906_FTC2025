@@ -22,7 +22,7 @@ public class Auto extends Robot {
 
     @Override
     public void start() {
-        odometry.setPosition(new vec3(-1.4, 0, 1.4), new vec3(0, Math.toRadians(45)));
+        odometry.setPosition(new vec3(-1.30, 0, 1.35), new vec3(0, Math.toRadians(50)));
 
         drivetrain = new Mecanum(frontLeft, frontRight, backLeft, backRight);
         follower = new Follower(drivetrain, odometry);
@@ -31,15 +31,16 @@ public class Auto extends Robot {
         follower.maxLateralVelocity = 1.66;
         follower.trackWidth = 0.43;
 
-        follower.translational.kP = 0.01;
-        follower.lateral.kP = 0.01;
-        follower.angular.kP = 0.05;
+        follower.translational.kP = 0.1;
+        follower.lateral.kP = 0.1;
+        follower.angular.kP = 0.1;
 
         follower.setPath(
                 new PathBuilder()
-                        .startAt(-1.4, 0, 1.4)
-                        .startHeading(0, Math.toRadians(45), 0)
-                        .lineTo(0, 0, 0)
+                        .startAt(-1.30, 0, 1.35)
+                        .startHeading(0, Math.toRadians(50), 0)
+                        .lineTo(-0.6, 0, 0.6)
+                        .turnTo(0, Math.toRadians(45), 0)
                         .build()
         );
     }
@@ -55,6 +56,7 @@ public class Auto extends Robot {
         if (!follower.done()) return;
 
         // TODO: logic lmao
+        follower.setPath(null);
     }
 
 }

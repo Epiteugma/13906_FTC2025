@@ -57,7 +57,8 @@ public class Follower {
 
         vec3 target = this.path.point(t, this.segment);
         vec3 rotation = this.path.orientation(t, this.segment);
-        double velocity = 1; // TODO: motion profiles?
+
+        double velocity = t > 0.9 ? 0.2 : 1; // TODO: this is hacky; motion profiles?
 
         vec2 direction = new vec2(
                 target.x - this.odometry.position.x,
@@ -85,15 +86,37 @@ public class Follower {
             telemetry.addData("target z", target.z);
             telemetry.addData("target velocity x", direction.x * velocity);
             telemetry.addData("target velocity z", direction.y * velocity);
+            telemetry.addData("target velocity", velocity);
             telemetry.addData("target heading", rotation.y);
             telemetry.addData("t", this.t);
             telemetry.addData("segment", this.segment);
+            telemetry.addLine();
+            telemetry.addLine("Odometry");
+            telemetry.addData("pos x", this.odometry.position.x);
+            telemetry.addData("pos z", this.odometry.position.z);
+            telemetry.addData("vel x", this.odometry.velocity.x);
+            telemetry.addData("vel z", this.odometry.velocity.z);
             telemetry.addLine();
         }
     }
 
     public boolean done() {
-        return this.segment == this.path.segments() - 1 && this.t == 1;
+        if (this.path == null) return true;
+        if (this.segment != this.path.segments() - 1) return false;
+
+        double headingError = this.path.orientation(1, this.segment).y - this.odometry.rotation.y;
+        headingError = Math.atan2(Math.sin(headingError), Math.cos(headingError));
+
+        vec3 target = this.path.point(1, this.segment);
+
+        double distanceError = Math.hypot(
+                target.x - this.odometry.position.x,
+                target.z - this.odometry.position.z
+        );
+
+        double velocity = Math.hypot(this.odometry.velocity.x, this.odometry.velocity.z);
+
+        return headingError < Math.toRadians(10) && distanceError < 0.1 && velocity < 0.1;
     }
 
     public void update(double delta) {
