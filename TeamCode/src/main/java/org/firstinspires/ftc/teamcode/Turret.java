@@ -261,9 +261,18 @@ public class Turret {
         lock(basket, robotYaw, robotYawVelocity, delta, null);
     }
 
+    double getPitch() {
+        return pitch.getPosition() * (MAX_ANGLE - MIN_ANGLE) + MIN_ANGLE;
+    }
+
     public boolean canShoot(Basket basket) {
-        double targetVelocity = shooter.toShooterVelocity(targetVelocity(basket));
-        return shooter.getWheelVelocity() >= targetVelocity;
+        double targetVelocity = targetVelocity(basket);
+        double shotAngle = getPitch();
+
+        double basketStartT = (basket.shotDistance.x - 0.33) / (targetVelocity * Math.cos(shotAngle));
+        double heightAtBasketStart = targetVelocity * Math.sin(shotAngle) * basketStartT - 0.5 * GRAVITY * Math.pow(basketStartT, 2);
+
+        return shooter.getWheelVelocity() >= shooter.toShooterVelocity(targetVelocity) && heightAtBasketStart >= (1 - TURRET_HEIGHT);
     }
 
     public void retainStopper() {
