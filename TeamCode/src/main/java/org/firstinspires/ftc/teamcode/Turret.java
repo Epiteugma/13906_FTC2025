@@ -13,12 +13,12 @@ import dev.zedboy.greatness.math.vec2;
 import dev.zedboy.greatness.math.vec3;
 
 public class Turret {
-    public static final double MAX_ANGLE = Math.toRadians(46.6);
+    public static final double MAX_ANGLE = Math.toRadians(45);
     public static final double MIN_ANGLE = MAX_ANGLE - Math.toRadians(12);
 
     static final double GRAVITY = 9.81;
 
-    static final double BASKET_HEIGHT = 1.1;
+    static final double BASKET_HEIGHT = 1.2;
     static final double TURRET_HEIGHT = 0.33;
 
     static final double YAW_RANGE_OFFSET = Math.toRadians(-45);
@@ -56,7 +56,6 @@ public class Turret {
 
         yawEncoder.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         yawEncoder.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
     }
 
     public static class Basket {
@@ -261,25 +260,16 @@ public class Turret {
         lock(basket, robotYaw, robotYawVelocity, delta, null);
     }
 
-    double getPitch() {
-        return pitch.getPosition() * (MAX_ANGLE - MIN_ANGLE) + MIN_ANGLE;
-    }
-
     public boolean canShoot(Basket basket) {
         double targetVelocity = targetVelocity(basket);
-        double shotAngle = getPitch();
-
-        double basketStartT = (basket.shotDistance.x - 0.33) / (targetVelocity * Math.cos(shotAngle));
-        double heightAtBasketStart = targetVelocity * Math.sin(shotAngle) * basketStartT - 0.5 * GRAVITY * Math.pow(basketStartT, 2);
-
-        return shooter.getWheelVelocity() >= shooter.toShooterVelocity(targetVelocity) && heightAtBasketStart >= (1 - TURRET_HEIGHT);
+        return shooter.getWheelVelocity() >= shooter.toShooterVelocity(targetVelocity);
     }
 
     public void retainStopper() {
-        stopper.setPosition(0);
+        stopper.setPosition(0.7);
     }
 
     public void releaseStopper() {
-        stopper.setPosition(1);
+        stopper.setPosition(0.95);
     }
 }
