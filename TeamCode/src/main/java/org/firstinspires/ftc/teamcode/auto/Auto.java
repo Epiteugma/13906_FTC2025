@@ -1,83 +1,55 @@
 package org.firstinspires.ftc.teamcode.auto;
 
-import com.pedropathing.follower.Follower;
-import com.pedropathing.geometry.BezierLine;
-import com.pedropathing.geometry.Pose;
-import com.pedropathing.paths.Path;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
 import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.Turret;
-import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
+import dev.zedboy.greatness.Path;
+import dev.zedboy.greatness.PathBuilder;
 import dev.zedboy.greatness.math.vec3;
+import dev.zedboy.greatness.ftc.Follower;
+import dev.zedboy.greatness.ftc.kinematics.Mecanum;
 
+@Autonomous(name = "Auto [BETA]")
 public class Auto extends Robot {
-    protected static double INCH_TO_CM = 2.54;
-    protected static double SHOT_GRADIENT = -9;
-    protected static double SHOT_TIMEOUT = 0.8;
-    protected static double[] PICKUP_DISTANCES = new double[]{28, 34, 37};
+    static final vec3 START_RED = new vec3(0.82, 0, 1.56);
+    static final vec3 START_BLUE = new vec3(-0.82, 0, 1.56);
 
-    protected Pose fieldCenter = new Pose(72, 72);
-    protected Pose redStart = fieldCenter.plus(new Pose(51, 51, Math.toRadians(45)));
-    protected Pose redShoot = fieldCenter.plus(new Pose(25, 25, Math.toRadians(45)));
+    static final vec3 COLLECT_ALIGN_RED = new vec3(0.6, 0, 0.25);
+    static final vec3 COLLECT_ALIGN_BLUE = new vec3(-0.6, 0, 0.25);
 
-    protected Pose blueStart = fieldCenter.plus(new Pose(-51, 51, Math.toRadians(135)));
-    protected Pose blueShoot = fieldCenter.plus(new Pose(-25, 25, Math.toRadians(135)));
+    Follower follower;
+    Mecanum drivetrain;
 
-    protected Pose redArtifacts1 = new Pose(100, 87);
-    protected Pose redArtifacts2 = new Pose(100, 63);
-    protected Pose redArtifacts3 = new Pose(100, 39);
-
-    protected Pose blueArtifacts1 = new Pose(50, 87);
-    protected Pose blueArtifacts2 = new Pose(50, 63);
-    protected Pose blueArtifacts3 = new Pose(50, 39);
-
-    protected Follower follower;
-
-    public enum State {
-        MOVING_TO_ARTIFACTS,
-        RETRACTING_FROM_ARTIFACTS,
-        MOVING_TO_SHOOT,
-        SHOOTING,
-        COLLECTING
-    }
-
-    int pickups  = 0;
-    int didShoot = 0;
-
-    double lastVelocity = 0;
-    long lastVelocityPoll = System.nanoTime();
-    long lastShot = System.nanoTime();
-
-    State state = State.MOVING_TO_SHOOT;
+    boolean didCunny = false;
     long timer;
 
     @Override
-    public boolean usingPedroPathing() {
-        return true;
-    }
-
-    Path createPath(Pose start, Pose end) {
-        Path path = new Path(new BezierLine(start, end));
-        path.setLinearHeadingInterpolation(start.getHeading(), end.getHeading());
-
-        return path;
-    }
-
-    @Override
     public void start() {
-        timer = System.nanoTime();
-        follower = Constants.createFollower(hardwareMap);
-
         if (getAlliance() == Alliance.UNKNOWN) return;
 
-        if (getAlliance() == Alliance.RED) {
-            follower.setStartingPose(redStart);
-            follower.followPath(createPath(redStart, redShoot));
-        } else {
-            follower.setStartingPose(blueStart);
-            follower.followPath(createPath(blueStart, blueShoot));
-        }
+        vec3 origin = getAlliance() == Alliance.RED ? START_RED : START_BLUE;
+        odometry.setPosition(origin);
+
+        drivetrain = new Mecanum(frontLeft, frontRight, backLeft, backRight);
+        follower = new Follower(drivetrain, odometry);
+
+        follower.maxTranslationalVelocity = 2.05;
+        follower.maxLateralVelocity = 1.66;
+        follower.trackWidth = 0.43;
+
+        follower.translational.kP = 0.1;
+        follower.lateral.kP = 0.1;
+        follower.angular.kP = 0.1;
+
+        follower.setPath(
+                new PathBuilder()
+                        .startAt(origin)
+                        .curveTo(getAlliance() == Alliance.RED ? COLLECT_ALIGN_RED : COLLECT_ALIGN_BLUE, new vec3(0, 0, 1.2))
+                        .turnTo(0, getAlliance() == Alliance.RED ? Math.toRadians(-90) : Math.toRadians(90), 0)
+                        .build()
+        );
     }
 
     @Override
@@ -87,117 +59,44 @@ public class Auto extends Robot {
         double delta = (System.nanoTime() - timer) / 1E9;
         timer = System.nanoTime();
 
-        follower.update();
+        follower.update(delta, telemetry);
+        telemetry.update();
 
-        Pose robotPose = follower.getPose();
-        vec3 position = new vec3(
-                (robotPose.getX() - 72) * INCH_TO_CM / 100.0,
-                0,
-                (robotPose.getY() - 72) * INCH_TO_CM / 100.0
-        );
+        Turret.Basket basket = turret.getBasket(getAlliance(), odometry.position);
+        turret.lock(basket, odometry.rotation.y, odometry.angularVel.y, delta);
 
-        Turret.Basket basket = turret.getBasket(getAlliance(), position);
-        boolean canShoot = turret.canShoot(basket);
-
-        if (state == State.MOVING_TO_SHOOT || state == State.SHOOTING) {
-            turret.lock(basket, robotPose.getHeading() - Math.PI / 2.0, 0, delta);
+        if (!didCunny) {
+            turret.shoot(basket, delta);
             turret.releaseStopper();
         } else {
+            turret.shoot(0);
             turret.retainStopper();
         }
 
-        if (state == State.SHOOTING || state == State.MOVING_TO_SHOOT) {
-            turret.shoot(basket, delta);
+        collector.setPower(didCunny || turret.canShoot(basket) ? 1 : 0);
 
-            double velGradient = (turret.shooter.getWheelVelocity() - lastVelocity) / 0.05;
+        if (!follower.done()) return;
 
-            if (state == State.SHOOTING && velGradient <= SHOT_GRADIENT && (System.nanoTime() - lastShot) / 1E9 >= 0.1) {
-                lastShot = System.nanoTime();
-                didShoot++;
-            }
-        } else if (state == State.COLLECTING) {
-            turret.shoot(-0.5);
+        if (!didCunny) {
+            didCunny = true;
+            vec3 collectAlign = getAlliance() == Alliance.RED ? COLLECT_ALIGN_RED : COLLECT_ALIGN_BLUE;
+
+            follower.setPath(
+                    new PathBuilder()
+                            .startAt(collectAlign)
+                            .startHeading(0, getAlliance() == Alliance.RED ? Math.toRadians(-90) : Math.toRadians(90), 0)
+                            .lineTo(new vec3(collectAlign.x + (getAlliance() == Alliance.RED ? 0.7 : -0.7), collectAlign.y, collectAlign.z))
+                            .lineTo(collectAlign)
+                            .build()
+            );
         } else {
-            turret.shoot(0);
+            follower.setPath(null);
+            requestOpModeStop();
         }
+    }
 
-        if (!canShoot) lastShot = System.nanoTime();
-
-        if ((System.nanoTime() - lastVelocityPoll) / 1E9 >= 0.05) {
-            lastVelocity = turret.shooter.getWheelVelocity();
-            lastVelocityPoll = System.nanoTime();
-        }
-
-        collector.setPower(state == State.COLLECTING || (state == State.SHOOTING && canShoot) ? 1 : 0);
-
-        telemetry.addData("state", state);
-        telemetry.addData("x (m)", position.x);
-        telemetry.addData("y (m)", position.y);
-        telemetry.addData("heading (deg)", Math.toDegrees(robotPose.getHeading() - Math.PI / 2.0));
-        telemetry.addData("didShoot", didShoot);
-        telemetry.addData("pickups", pickups);
-
-        telemetry.update();
-
-        if (follower.isBusy()) return;
-
-        Pose artifacts = null;
-        Pose shoot = getAlliance() == Alliance.RED ? redShoot : blueShoot;
-
-        switch (pickups) {
-            case 0:
-                artifacts = getAlliance() == Alliance.RED ? redArtifacts1 : blueArtifacts1;
-                break;
-            case 1:
-                artifacts = getAlliance() == Alliance.RED ? redArtifacts2 : blueArtifacts2;
-                break;
-            case 2:
-                artifacts = getAlliance() == Alliance.RED ? redArtifacts3 : blueArtifacts3;
-                break;
-        }
-
-        Pose artifactsEnd = null;
-
-        if (artifacts != null) {
-            if (getAlliance() == Alliance.RED) {
-                artifactsEnd = artifacts.plus(new Pose(PICKUP_DISTANCES[pickups], 0, Math.toRadians(10)));
-            } else {
-                artifacts = artifacts.setHeading(Math.PI);
-                artifactsEnd = artifacts.minus(new Pose(PICKUP_DISTANCES[pickups], 0, Math.toRadians(10)));
-            }
-        }
-
-        switch (state) {
-            case MOVING_TO_SHOOT:
-                state = State.SHOOTING;
-                didShoot = 0;
-                break;
-            case SHOOTING:
-                boolean timedOut = canShoot && (System.nanoTime() - lastShot) / 1E9 > SHOT_TIMEOUT;
-                if (artifacts == null || !timedOut && didShoot < 3) break;
-
-                state = State.MOVING_TO_ARTIFACTS;
-                follower.followPath(createPath(shoot, artifacts));
-                break;
-            case MOVING_TO_ARTIFACTS:
-                if (artifacts == null) break;
-
-                state = State.COLLECTING;
-                follower.followPath(createPath(artifacts, artifactsEnd));
-                break;
-            case RETRACTING_FROM_ARTIFACTS:
-                if (artifacts == null) break;
-
-                state = State.MOVING_TO_SHOOT;
-                follower.followPath(createPath(artifacts, shoot));
-                break;
-            case COLLECTING:
-                if (artifacts == null) break;
-
-                pickups++;
-                state = pickups == 2 ? State.RETRACTING_FROM_ARTIFACTS : State.MOVING_TO_SHOOT;
-                follower.followPath(createPath(artifactsEnd, pickups == 2 ? artifacts : shoot));
-                break;
-        }
+    @Override
+    public Alliance getAlliance() {
+        return Alliance.BLUE;
     }
 }

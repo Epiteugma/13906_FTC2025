@@ -22,8 +22,7 @@ public class Turret {
     static final double TURRET_HEIGHT = 0.33;
 
     static final double YAW_RANGE_OFFSET = Math.toRadians(-45);
-    static final double YAW_TPR = 8192 * 5.75;
-    static final double YAW_DIRECTION = -1;
+    static final double YAW_TPR = 8192 * (114 / 20.0);
 
     static final vec2 BLUE_BASKET = new vec2(-1.70, 1.70);
     static final vec2 RED_BASKET = new vec2(1.70, 1.70);
@@ -35,14 +34,16 @@ public class Turret {
 
     CRServo yaw;
     DcMotor yawEncoder;
+    final double yawDirection;
     PIDFController yawPIDF = new PIDFController(1.75, 0, 0.05);
 
     public double yawOffset = 0;
 
-    public Turret(HardwareMap hardwareMap) {
+    public Turret(HardwareMap hardwareMap, Robot.HardwareLayout hardwareLayout) {
         shooter = new Shooter(
                 hardwareMap.get(DcMotorEx.class, "shooter"),
-                hardwareMap.get(DcMotorEx.class, "shooterB")
+                hardwareMap.get(DcMotorEx.class, "shooterB"),
+                hardwareLayout
         );
 
         stopper = hardwareMap.get(Servo.class, "stopper");
@@ -56,6 +57,7 @@ public class Turret {
 
         yawEncoder.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         yawEncoder.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        yawDirection = -1;
     }
 
     public static class Basket {
@@ -106,8 +108,15 @@ public class Turret {
         DcMotorEx motor;
         DcMotorEx motorB;
 
-        private Shooter(DcMotorEx motor, DcMotorEx motorB) {
-            motor.setDirection(DcMotorEx.Direction.REVERSE);
+        private Shooter(DcMotorEx motor, DcMotorEx motorB, Robot.HardwareLayout hardwareLayout) {
+            switch (hardwareLayout) {
+                case RevvedUp13906:
+                    motor.setDirection(DcMotorEx.Direction.REVERSE);
+                    break;
+                case RevvedUp24372:
+                    motorB.setDirection(DcMotorEx.Direction.REVERSE);
+                    break;
+            }
 
             this.motor = motor;
             this.motorB = motorB;
@@ -149,7 +158,7 @@ public class Turret {
     }
 
     private double currentYaw() {
-        return yawEncoder.getCurrentPosition() * YAW_DIRECTION / YAW_TPR * (2 * Math.PI);
+        return yawEncoder.getCurrentPosition() * yawDirection / YAW_TPR * (2 * Math.PI);
     }
 
     public boolean isYawLocked(Basket basket, double robotYaw) {
@@ -262,7 +271,7 @@ public class Turret {
 
     public boolean canShoot(Basket basket) {
         double targetVelocity = targetVelocity(basket);
-        return shooter.getWheelVelocity() >= shooter.toShooterVelocity(targetVelocity);
+        return shooter.getWheelVelocity() + 0.2 >= shooter.toShooterVelocity(targetVelocity);
     }
 
     public void retainStopper() {

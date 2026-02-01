@@ -25,7 +25,6 @@ public class Drive extends Robot {
         timer = System.nanoTime();
 
         odometry.update(delta);
-        if (visor.poll()) visor.recalibrate(odometry);
 
         double y = -gamepad1.left_stick_y;
         double x = gamepad1.left_stick_x;

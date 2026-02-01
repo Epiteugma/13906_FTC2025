@@ -116,7 +116,7 @@ public class Follower {
 
         double velocity = Math.hypot(this.odometry.velocity.x, this.odometry.velocity.z);
 
-        return headingError < Math.toRadians(10) && distanceError < 0.1 && velocity < 0.1;
+        return headingError < Math.toRadians(10) && distanceError < 0.1 && velocity < 0.2;
     }
 
     public void update(double delta) {

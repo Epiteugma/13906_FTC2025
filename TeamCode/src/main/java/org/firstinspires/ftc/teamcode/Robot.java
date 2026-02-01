@@ -4,6 +4,9 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.internal.network.DeviceNameManager;
+import org.firstinspires.ftc.robotcore.internal.network.DeviceNameManagerFactory;
+import org.firstinspires.ftc.robotcore.internal.network.StartResult;
 import org.firstinspires.ftc.teamcode.gobilda.GoBildaOdometry;
 import org.firstinspires.ftc.teamcode.gobilda.GoBildaPinpointDriver;
 
@@ -30,10 +33,14 @@ public abstract class Robot extends OpMode {
 
     protected Turret turret;
     protected Odometry odometry;
-    protected Visor visor;
 
     public enum Alliance {
         RED, BLUE, UNKNOWN
+    }
+
+    public enum HardwareLayout {
+        RevvedUp13906,
+        RevvedUp24372
     }
 
     public final void init() {
@@ -55,36 +62,40 @@ public abstract class Robot extends OpMode {
         collector = hardwareMap.get(DcMotor.class, "collector");
         collector.setDirection(DcMotor.Direction.REVERSE);
 
-        if (!usingPedroPathing()) {
-            GoBildaPinpointDriver pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
-            pinpoint.setOffsets(-0.062, -0.18, DistanceUnit.METER);
+        GoBildaPinpointDriver pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
+        pinpoint.setOffsets(-0.062, -0.18, DistanceUnit.METER);
 
-            odometry = new GoBildaOdometry(pinpoint);
+        odometry = new GoBildaOdometry(pinpoint);
 
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException ignored) {  }
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException ignored) {  }
 
-            // TODO: shared state
+        // TODO: shared state
 
-            switch (getAlliance()) {
-                case RED:
-                    odometry.setPosition(new vec3(0.4, 0, -1.6));
-                    break;
-                case BLUE:
-                    odometry.setPosition(new vec3(-0.4, 0, -1.6));
-                    break;
-            }
+        switch (getAlliance()) {
+            case RED:
+                odometry.setPosition(new vec3(0.4, 0, -1.6));
+                break;
+            case BLUE:
+                odometry.setPosition(new vec3(-0.4, 0, -1.6));
+                break;
         }
 
-        turret = new Turret(hardwareMap);
-        visor = new Visor(hardwareMap, turret);
+        turret = new Turret(hardwareMap, getHardwareLayout());
 
         // TODO: restore turret state if present
     }
 
-    public boolean usingPedroPathing() {
-        return false;
+    public HardwareLayout getHardwareLayout() {
+        StartResult startResult = new StartResult();
+        DeviceNameManager nameManager = DeviceNameManagerFactory.getInstance();
+        nameManager.start(startResult);
+
+        String deviceName = nameManager.getDeviceName();
+        nameManager.stop(startResult);
+
+        return deviceName.equals("24372-RC") ? HardwareLayout.RevvedUp24372 : HardwareLayout.RevvedUp13906;
     }
 
     public Alliance getAlliance() {
@@ -94,15 +105,8 @@ public abstract class Robot extends OpMode {
     public abstract void loop();
 
     public boolean isInZone(ZoneManager.Zone zone) {
-        vec2 position;
-        double heading;
-
-        if (usingPedroPathing()) {
-            return false;
-        } else {
-            position = new vec2(odometry.position.x, odometry.position.z);
-            heading = odometry.rotation.y;
-        }
+        vec2 position = new vec2(odometry.position.x, odometry.position.z);
+        double heading = odometry.rotation.y;
 
         for (ZoneManager.OBB obb : COLLISION_BOXES) {
             if (zone.intersects(obb, position, heading)) return true;

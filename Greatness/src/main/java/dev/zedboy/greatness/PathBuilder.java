@@ -27,12 +27,20 @@ public class PathBuilder {
         return this;
     }
 
+    public PathBuilder startAt(vec3 start) {
+        return this.startAt(start.x, start.y, start.z);
+    }
+
     public PathBuilder startHeading(double x, double y, double z) {
         this.heading.x = x;
         this.heading.y = y;
         this.heading.z = z;
 
         return this;
+    }
+
+    public PathBuilder startHeading(vec3 heading) {
+        return this.startHeading(heading.x, heading.y, heading.z);
     }
 
     public PathBuilder lineTo(double x, double y, double z) {
@@ -42,12 +50,20 @@ public class PathBuilder {
         return this;
     }
 
+    public PathBuilder lineTo(vec3 point) {
+        return this.lineTo(point.x, point.y, point.z);
+    }
+
     public PathBuilder curveTo(double x, double y, double z, double cx, double cy, double cz) {
         this.points.add(new vec3(x, y, z));
         this.points.add(new vec3(cx, cy, cz));
 
         this.operations.add(Operation.CURVE);
         return this;
+    }
+
+    public PathBuilder curveTo(vec3 point, vec3 control) {
+        return this.curveTo(point.x, point.y, point.z, control.x, control.y, control.z);
     }
 
     public PathBuilder turnTo(double x, double y, double z, Interpolator interpolator, double t) {
@@ -68,6 +84,22 @@ public class PathBuilder {
 
     public PathBuilder turnTo(double x, double y, double z) {
         return this.turnTo(x, y, z, null, 1);
+    }
+
+    public PathBuilder turnTo(vec3 heading, Interpolator interpolator, double t) {
+        return this.turnTo(heading.x, heading.y, heading.z, interpolator, t);
+    }
+
+    public PathBuilder turnTo(vec3 heading, Interpolator interpolator) {
+        return this.turnTo(heading.x, heading.y, heading.z, interpolator, 1);
+    }
+
+    public PathBuilder turnTo(vec3 heading, double t) {
+        return this.turnTo(heading.x, heading.y, heading.z, null, t);
+    }
+
+    public PathBuilder turnTo(vec3 heading) {
+        return this.turnTo(heading.x, heading.y, heading.z, null, 1);
     }
 
     public Path build() {
