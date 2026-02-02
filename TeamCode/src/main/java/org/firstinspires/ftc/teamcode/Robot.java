@@ -11,6 +11,8 @@ import org.firstinspires.ftc.teamcode.gobilda.GoBildaOdometry;
 import org.firstinspires.ftc.teamcode.gobilda.GoBildaPinpointDriver;
 
 import dev.zedboy.greatness.Odometry;
+import dev.zedboy.greatness.ftc.Follower;
+import dev.zedboy.greatness.ftc.kinematics.Mecanum;
 import dev.zedboy.greatness.math.vec2;
 import dev.zedboy.greatness.math.vec3;
 
@@ -33,6 +35,8 @@ public abstract class Robot extends OpMode {
 
     protected Turret turret;
     protected Odometry odometry;
+
+    protected Follower follower;
 
     public enum Alliance {
         RED, BLUE, UNKNOWN
@@ -71,20 +75,18 @@ public abstract class Robot extends OpMode {
             Thread.sleep(500);
         } catch (InterruptedException ignored) {  }
 
-        // TODO: shared state
+        Mecanum drivetrain = new Mecanum(frontLeft, frontRight, backLeft, backRight);
+        follower = new Follower(drivetrain, odometry);
 
-        switch (getAlliance()) {
-            case RED:
-                odometry.setPosition(new vec3(0.4, 0, -1.6));
-                break;
-            case BLUE:
-                odometry.setPosition(new vec3(-0.4, 0, -1.6));
-                break;
-        }
+        follower.maxTranslationalVelocity = 2.05;
+        follower.maxLateralVelocity = 1.66;
+        follower.trackWidth = 0.43;
+
+        follower.translational.kP = 0.1;
+        follower.lateral.kP = 0.1;
+        follower.angular.kP = 0.1;
 
         turret = new Turret(hardwareMap, getHardwareLayout());
-
-        // TODO: restore turret state if present
     }
 
     public HardwareLayout getHardwareLayout() {

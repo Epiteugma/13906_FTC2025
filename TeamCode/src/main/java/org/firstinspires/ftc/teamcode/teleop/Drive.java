@@ -3,6 +3,9 @@ package org.firstinspires.ftc.teamcode.teleop;
 import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.Turret;
 import org.firstinspires.ftc.teamcode.ZoneManager;
+import org.firstinspires.ftc.teamcode.auto.ParkAuto;
+
+import dev.zedboy.greatness.math.vec3;
 
 public class Drive extends Robot {
     boolean shooting = false;
@@ -15,8 +18,19 @@ public class Drive extends Robot {
 
     @Override
     public void start() {
-         timer = System.nanoTime();
-         shootingSwitchTime = System.nanoTime();
+        timer = System.nanoTime();
+        shootingSwitchTime = System.nanoTime();
+
+        // TODO: inherit state from auto rather than using parking auto start position
+
+        switch (getAlliance()) {
+            case RED:
+                odometry.setPosition(ParkAuto.START_RED);
+                break;
+            case BLUE:
+                odometry.setPosition(ParkAuto.START_BLUE);
+                break;
+        }
     }
 
     @Override
