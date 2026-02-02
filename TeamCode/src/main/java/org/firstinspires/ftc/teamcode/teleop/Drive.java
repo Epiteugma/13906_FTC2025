@@ -3,9 +3,7 @@ package org.firstinspires.ftc.teamcode.teleop;
 import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.Turret;
 import org.firstinspires.ftc.teamcode.ZoneManager;
-import org.firstinspires.ftc.teamcode.auto.ParkAuto;
-
-import dev.zedboy.greatness.math.vec3;
+import org.firstinspires.ftc.teamcode.auto.FarAuto;
 
 public class Drive extends Robot {
     boolean shooting = false;
@@ -25,10 +23,10 @@ public class Drive extends Robot {
 
         switch (getAlliance()) {
             case RED:
-                odometry.setPosition(ParkAuto.START_RED);
+                odometry.setPosition(FarAuto.START_RED);
                 break;
             case BLUE:
-                odometry.setPosition(ParkAuto.START_BLUE);
+                odometry.setPosition(FarAuto.START_BLUE);
                 break;
         }
     }
