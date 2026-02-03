@@ -95,15 +95,15 @@ public class Turret {
         static final double TPR = 28;
         static final double RATIO = 10 / 15.0;
         static final double RATIO_B = 10 / 15.0;
-        static final double RADIUS = 0.045;
         static final double RPM = 6000;
-
-        static final double MAX_VELOCITY = RPM * RATIO / 60.0 * (2 * Math.PI) * RADIUS;
 
         static final double VELOCITY_FRICTION_LOSS = 0.5;
         static final double VELOCITY_COMPRESSION_LOSS = 3.4;
 
-        PIDFController pidf = new PIDFController(1.5, 0, 0, 1 / MAX_VELOCITY);
+        static final double FLYWHEEL_RADIUS = 0.045;
+        static final double MAX_FLYWHEEL_VELOCITY = RPM * RATIO / 60.0 * (2 * Math.PI) * FLYWHEEL_RADIUS;
+
+        PIDFController pidf = new PIDFController(1.5, 0, 0, 1 / MAX_FLYWHEEL_VELOCITY);
 
         DcMotorEx motor;
         DcMotorEx motorB;
@@ -122,16 +122,15 @@ public class Turret {
             this.motorB = motorB;
         }
 
-        double getWheelRPM() {
+        double getFlywheelRPM() {
             return motor.getVelocity() / (TPR * RATIO) * 60;
         }
 
-        public double getWheelVelocity() {
-            double omega = getWheelRPM() / 60.0 * (2 * Math.PI);
-            return omega * RADIUS;
+        public double getFlywheelVelocity() {
+            return getFlywheelRPM() / 60.0 * (2 * Math.PI) * FLYWHEEL_RADIUS;
         }
 
-        public double toShooterVelocity(double velocity) {
+        public double toFlywheelVelocity(double velocity) {
             return velocity / (1 - VELOCITY_FRICTION_LOSS) + VELOCITY_COMPRESSION_LOSS;
         }
 
@@ -145,7 +144,7 @@ public class Turret {
         }
 
         void setVelocity(double velocity, double delta) {
-            double power = pidf.update(velocity, getWheelVelocity(), delta);
+            double power = pidf.update(velocity, getFlywheelVelocity(), delta);
 
             motor.setPower(power);
             motorB.setPower(power * RATIO_B / RATIO);
@@ -236,15 +235,11 @@ public class Turret {
     }
 
     public void shoot(Basket basket, double delta) {
-        shoot(shooter.toShooterVelocity(targetVelocity(basket)), delta);
+        shoot(shooter.toFlywheelVelocity(targetVelocity(basket)), delta);
     }
 
     private double targetVelocity(Basket basket) {
-        if (basket.shotDistance.x < 2.6) {
-            return basket.shotVelocity(MAX_ANGLE);
-        } else {
-            return basket.shotVelocity(MIN_ANGLE);
-        }
+        return basket.shotVelocity(MAX_ANGLE);
     }
 
     public void lock(Basket basket, double robotYaw, double robotYawVelocity, double delta, Telemetry telemetry) {
@@ -253,14 +248,14 @@ public class Turret {
         if (telemetry != null) {
             telemetry.addLine("Turret");
             telemetry.addData("target ball velocity (ms^-1)", velocity);
-            telemetry.addData("current ball velocity (ms^-1)", shooter.toArtifactVelocity(shooter.getWheelVelocity()));
-            telemetry.addData("target shooter velocity (ms^-1)", shooter.toShooterVelocity(velocity));
-            telemetry.addData("current shooter velocity (ms^-1)", shooter.getWheelVelocity());
-            telemetry.addData("current shooter velocity (rpm)", shooter.getWheelRPM());
+            telemetry.addData("current ball velocity (ms^-1)", shooter.toArtifactVelocity(shooter.getFlywheelVelocity()));
+            telemetry.addData("target shooter velocity (rads^-1)", shooter.toFlywheelVelocity(velocity));
+            telemetry.addData("current shooter velocity (rads^-1)", shooter.getFlywheelVelocity());
+            telemetry.addData("current shooter velocity (rpm)", shooter.getFlywheelRPM());
         }
 
         lockYaw(basket, robotYaw, robotYawVelocity, delta, telemetry);
-        lockPitch(basket, shooter.getWheelVelocity(), telemetry);
+        lockPitch(basket, shooter.getFlywheelVelocity(), telemetry);
 
         if (telemetry != null) telemetry.addLine();
     }
@@ -271,7 +266,7 @@ public class Turret {
 
     public boolean canShoot(Basket basket) {
         double targetVelocity = targetVelocity(basket);
-        return shooter.getWheelVelocity() + 0.2 >= shooter.toShooterVelocity(targetVelocity);
+        return shooter.getFlywheelVelocity() + 0.2 >= shooter.toFlywheelVelocity(targetVelocity);
     }
 
     public void retainStopper() {
