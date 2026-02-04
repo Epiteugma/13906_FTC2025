@@ -23,10 +23,10 @@ public class Drive extends Robot {
 
         switch (getAlliance()) {
             case RED:
-                // odometry.setPosition(FarAuto.START_RED);
+                odometry.setPosition(FarAuto.START_RED);
                 break;
             case BLUE:
-                // odometry.setPosition(FarAuto.START_BLUE);
+                odometry.setPosition(FarAuto.START_BLUE);
                 break;
         }
     }

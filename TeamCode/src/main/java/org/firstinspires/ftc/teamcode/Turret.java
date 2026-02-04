@@ -20,7 +20,7 @@ public class Turret {
 
     static final double GRAVITY = 9.81;
 
-    static final double BASKET_HEIGHT = 1.2;
+    static final double BASKET_HEIGHT = 1.1;
     static final double TURRET_HEIGHT = 0.33;
 
     static final double YAW_RANGE_OFFSET = Math.toRadians(-45);
@@ -104,7 +104,7 @@ public class Turret {
         static final double FLYWHEEL_RADIUS = 0.045;
         static final double MAX_FLYWHEEL_VELOCITY = RPM * RATIO / 60.0 * (2 * Math.PI);
 
-        PIDFController pidf = new PIDFController(0.35, 0, 0, 1 / MAX_FLYWHEEL_VELOCITY);
+        PIDFController pidf = new PIDFController(0.1, 0, 0, 1 / MAX_FLYWHEEL_VELOCITY);
 
         DcMotorEx motor;
         DcMotorEx motorB;
@@ -217,7 +217,7 @@ public class Turret {
     }
 
     public void shoot(Basket basket, double delta) {
-        shoot(shooter.toFlywheelVelocity(targetVelocity(basket)), delta);
+        shoot(shooter.toFlywheelVelocity(targetVelocity(basket) * 1.05), delta);
     }
 
     private double targetVelocity(Basket basket) {
@@ -247,7 +247,7 @@ public class Turret {
     }
 
     public boolean canShoot(Basket basket) {
-        double artifactVelocity = shooter.toArtifactVelocity(shooter.getFlywheelVelocity()) * 1.1;
+        double artifactVelocity = shooter.toArtifactVelocity(shooter.getFlywheelVelocity()) + 0.5;
         double angle = basket.shotAngles(artifactVelocity)[0];
 
         return !Double.isNaN(angle) && MIN_ANGLE <= angle && angle <= MAX_ANGLE;
