@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
+import android.util.Log;
+
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -97,12 +99,12 @@ public class Turret {
         static final double RATIO_B = 10 / 15.0;
         static final double RPM = 6000;
 
-        static final double EFFICIENCY = 0.5;
+        static final double EFFICIENCY = 0.4;
 
         static final double FLYWHEEL_RADIUS = 0.045;
         static final double MAX_FLYWHEEL_VELOCITY = RPM * RATIO / 60.0 * (2 * Math.PI);
 
-        PIDFController pidf = new PIDFController(1.5, 0, 0, 1 / MAX_FLYWHEEL_VELOCITY);
+        PIDFController pidf = new PIDFController(0.35, 0, 0, 1 / MAX_FLYWHEEL_VELOCITY);
 
         DcMotorEx motor;
         DcMotorEx motorB;
@@ -143,6 +145,8 @@ public class Turret {
         }
 
         void setVelocity(double velocity, double delta) {
+            if (Double.isNaN(velocity)) return;
+
             double power = pidf.update(velocity, getFlywheelVelocity(), delta);
 
             motor.setPower(power);
@@ -243,8 +247,10 @@ public class Turret {
     }
 
     public boolean canShoot(Basket basket) {
-        double targetVelocity = targetVelocity(basket);
-        return shooter.getFlywheelVelocity() + 0.2 >= shooter.toFlywheelVelocity(targetVelocity);
+        double artifactVelocity = shooter.toArtifactVelocity(shooter.getFlywheelVelocity()) * 1.1;
+        double angle = basket.shotAngles(artifactVelocity)[0];
+
+        return !Double.isNaN(angle) && MIN_ANGLE <= angle && angle <= MAX_ANGLE;
     }
 
     public void retainStopper() {
