@@ -128,6 +128,10 @@ public class Follower {
         this.segment = 0;
     }
 
+    public int getSegment() {
+        return this.segment;
+    }
+
     public Follower(Kinematic drivetrain, Odometry odometry) {
         this.drivetrain = drivetrain;
         this.odometry = odometry;
