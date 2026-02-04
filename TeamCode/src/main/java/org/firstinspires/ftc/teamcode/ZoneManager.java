@@ -55,7 +55,7 @@ public class ZoneManager {
                 if (isInside(corner)) return true;
             }
 
-            return false;
+            return obb.isInside(a, origin, heading) || obb.isInside(b, origin, heading) || obb.isInside(c, origin, heading);
         }
     }
 
@@ -78,7 +78,10 @@ public class ZoneManager {
                 if (inX && inY) return true;
             }
 
-            return false;
+            return obb.isInside(new vec2(center.x - size.x / 2, center.y - size.y / 2), origin, heading) ||
+                    obb.isInside(new vec2(center.x - size.x / 2, center.y + size.y / 2), origin, heading) ||
+                    obb.isInside(new vec2(center.x + size.x / 2, center.y + size.y / 2), origin, heading) ||
+                    obb.isInside(new vec2(center.x + size.x / 2, center.y - size.y / 2), origin, heading);
         }
     }
 
@@ -89,6 +92,16 @@ public class ZoneManager {
         public OBB(vec2 center, vec2 size) {
             this.center = center;
             this.size = size;
+        }
+
+        public boolean isInside(vec2 point, vec2 origin, double heading) {
+            vec2 local = new vec2(
+                    point.x - (origin.x + center.x),
+                    point.y - (origin.y + center.y)
+            ).rotate(-heading);
+
+            return -size.x / 2 <= local.x && local.x <= size.x / 2 &&
+                    -size.y / 2 <= local.y && local.y <= size.y / 2;
         }
 
         public vec2[] corners(vec2 origin, double heading) {
