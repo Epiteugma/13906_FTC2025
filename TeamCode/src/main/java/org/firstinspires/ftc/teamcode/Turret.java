@@ -170,7 +170,7 @@ public class Turret {
         return Math.abs(yawError) < Math.toRadians(5);
     }
 
-    public void lockYaw(Basket basket, double robotYaw, double robotYawVelocity, double delta, Telemetry telemetry) {
+    public void lockYaw(Basket basket, double robotYaw, double delta, Telemetry telemetry) {
         double currentYaw = currentYaw();
         double targetYaw = Math.atan2(basket.distance.y, basket.distance.x) - Math.PI / 2 - robotYaw + yawOffset;
 
@@ -179,7 +179,7 @@ public class Turret {
                 Math.cos(targetYaw - YAW_RANGE_OFFSET)
         ) + YAW_RANGE_OFFSET;
 
-        yaw.setPower(yawPIDF.update(targetYaw - currentYaw, 0.1 * robotYawVelocity, delta));
+        yaw.setPower(yawPIDF.update(targetYaw, currentYaw, delta));
 
         if (telemetry != null) {
             telemetry.addData("current yaw (deg)", Math.toDegrees(currentYaw));
@@ -187,8 +187,8 @@ public class Turret {
         }
     }
 
-    public void lockYaw(Basket basket, double robotYaw,  double robotYawVelocity, double delta) {
-        lockYaw(basket, robotYaw, robotYawVelocity, delta, null);
+    public void lockYaw(Basket basket, double robotYaw, double delta) {
+        lockYaw(basket, robotYaw, delta, null);
     }
 
     public void lockPitch(Basket basket, double flywheelVelocity, Telemetry telemetry) {
@@ -224,7 +224,7 @@ public class Turret {
         return basket.shotVelocity(MAX_ANGLE);
     }
 
-    public void lock(Basket basket, double robotYaw, double robotYawVelocity, double delta, Telemetry telemetry) {
+    public void lock(Basket basket, double robotYaw, double delta, Telemetry telemetry) {
         double velocity = targetVelocity(basket);
 
         if (telemetry != null) {
@@ -236,14 +236,14 @@ public class Turret {
             telemetry.addData("current shooter velocity (rpm)", shooter.getFlywheelRPM());
         }
 
-        lockYaw(basket, robotYaw, robotYawVelocity, delta, telemetry);
+        lockYaw(basket, robotYaw, delta, telemetry);
         lockPitch(basket, shooter.getFlywheelVelocity(), telemetry);
 
         if (telemetry != null) telemetry.addLine();
     }
 
-    public void lock(Basket basket, double robotYaw, double robotYawVelocity, double delta) {
-        lock(basket, robotYaw, robotYawVelocity, delta, null);
+    public void lock(Basket basket, double robotYaw, double delta) {
+        lock(basket, robotYaw, delta, null);
     }
 
     public boolean canShoot(Basket basket) {

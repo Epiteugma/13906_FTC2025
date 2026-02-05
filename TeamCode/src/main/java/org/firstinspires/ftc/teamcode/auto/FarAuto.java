@@ -69,7 +69,7 @@ public class FarAuto extends Robot {
         }
 
         Turret.Basket basket = turret.getBasket(getAlliance(), odometry.position);
-        turret.lock(basket, odometry.rotation.y, odometry.angularVel.y, delta);
+        turret.lock(basket, odometry.rotation.y, delta);
 
         follower.update(delta, telemetry);
 

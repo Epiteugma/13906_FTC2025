@@ -61,7 +61,7 @@ public class Drive extends Robot {
         Turret.Basket basket = turret.getBasket(getAlliance(), odometry.position);
         boolean canShoot = turret.canShoot(basket) && turret.isYawLocked(basket, odometry.rotation.y);
 
-        turret.lock(basket, odometry.rotation.y, odometry.angularVel.y, delta, telemetry);
+        turret.lock(basket, odometry.rotation.y, delta, telemetry);
 
         if (shooting) {
             turret.shoot(basket, delta);
