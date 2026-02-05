@@ -42,7 +42,11 @@ public class Drive extends Robot {
         double x = gamepad1.left_stick_x;
         double w = -gamepad1.right_stick_x;
 
-        shooting = isInZone(ZoneManager.SHOOTING_ZONE_CLOSE) || isInZone(ZoneManager.SHOOTING_ZONE_FAR);
+        Turret.Basket basket = turret.getBasket(getAlliance(), odometry.position, odometry.velocity);
+
+        shooting = turret.willNotHitWall(basket) && (
+                isInZone(ZoneManager.SHOOTING_ZONE_CLOSE) || isInZone(ZoneManager.SHOOTING_ZONE_FAR)
+        );
 
         if (shooting != wasShooting) shootingSwitchTime = System.nanoTime();
         wasShooting = shooting;
@@ -58,7 +62,6 @@ public class Drive extends Robot {
         backLeft.setPower(y - x - w);
         backRight.setPower(y + x + w);
 
-        Turret.Basket basket = turret.getBasket(getAlliance(), odometry.position);
         boolean canShoot = turret.canShoot(basket) && turret.isYawLocked(basket, odometry.rotation.y);
 
         turret.lock(basket, odometry.rotation.y, delta, telemetry);

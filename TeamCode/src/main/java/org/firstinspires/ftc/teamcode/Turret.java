@@ -1,7 +1,5 @@
 package org.firstinspires.ftc.teamcode;
 
-import android.util.Log;
-
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -19,9 +17,9 @@ public class Turret {
     public static final double MIN_ANGLE = MAX_ANGLE - Math.toRadians(12);
 
     static final double GRAVITY = 9.81;
-    static final double TARGET_VELOCITY_MULTIPLIER = 1.15;
+    static final double TARGET_VELOCITY_MULTIPLIER = 1.1;
 
-    static final double BASKET_HEIGHT = 1.1;
+    static final double BASKET_HEIGHT = 1.15;
     static final double TURRET_HEIGHT = 0.33;
 
     static final double YAW_RANGE_OFFSET = Math.toRadians(-45);
@@ -38,7 +36,7 @@ public class Turret {
     CRServo yaw;
     DcMotor yawEncoder;
     final double yawDirection;
-    PIDFController yawPIDF = new PIDFController(1.75, 0, 0.05);
+    PIDFController yawPIDF = new PIDFController(2, 0, 0.05);
 
     public double yawOffset = 0;
 
@@ -100,8 +98,8 @@ public class Turret {
         static final double RATIO_B = 10 / 15.0;
         static final double RPM = 6000;
 
-        static final double EFFICIENCY = 0.4;
-        static final double ARTIFACT_LOAD_VELOCITY = 0.7;
+        static final double EFFICIENCY = 0.37;
+        static final double ARTIFACT_LOAD_VELOCITY = 0.85;
 
         static final double FLYWHEEL_RADIUS = 0.045;
         static final double MAX_FLYWHEEL_VELOCITY = RPM * RATIO / 60.0 * (2 * Math.PI);
@@ -156,9 +154,14 @@ public class Turret {
         }
     }
 
-    public Basket getBasket(Robot.Alliance alliance, vec3 robotPosition) {
+    public Basket getBasket(Robot.Alliance alliance, vec3 robotPosition, vec3 robotVelocity) {
         if (alliance == Robot.Alliance.UNKNOWN) return null;
-        return new Basket(alliance == Robot.Alliance.RED ? RED_BASKET : BLUE_BASKET, robotPosition);
+
+        return new Basket(alliance == Robot.Alliance.RED ? RED_BASKET : BLUE_BASKET, new vec3(
+                robotPosition.x + robotVelocity.x * 0.2,
+                robotPosition.y + robotVelocity.y * 0.2,
+                robotPosition.z + robotVelocity.z * 0.2
+        ));
     }
 
     private double currentYaw() {
@@ -248,11 +251,21 @@ public class Turret {
         lock(basket, robotYaw, delta, null);
     }
 
+    public boolean willNotHitWall(Basket basket) {
+        double artifactVelocity = targetVelocity(basket);
+        double angle = basket.shotAngles(artifactVelocity)[0];
+
+        double basketStartT = (basket.shotDistance.x - 0.45) / (artifactVelocity * Math.cos(angle));
+        double basketStartY = (artifactVelocity * Math.sin(angle)) * basketStartT - 0.5 * GRAVITY * Math.pow(basketStartT, 2);
+
+        return basketStartY + TURRET_HEIGHT > 1;
+    }
+
     public boolean canShoot(Basket basket) {
         double artifactVelocity = shooter.toArtifactVelocity(shooter.getFlywheelVelocity());
         double angle = basket.shotAngles(artifactVelocity)[0];
 
-        return !Double.isNaN(angle) && MIN_ANGLE <= angle && angle <= MAX_ANGLE;
+        return !Double.isNaN(angle) && MIN_ANGLE <= angle && angle <= MAX_ANGLE && willNotHitWall(basket);
     }
 
     public void retainStopper() {

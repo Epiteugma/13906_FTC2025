@@ -21,10 +21,11 @@ public class FarAuto extends Robot {
     static final vec3 SHOOT_BLUE = new vec3(-0.5, 0, -1.5);
 
     long timer;
-    long runTimer;
-    long finishedAt = 0;
 
+    long shotTimer;
+    boolean didStartShooting = false;
     boolean shotPreload = false;
+
     State state = State.Shooting;
 
     Path collectPath = new PathBuilder()
@@ -46,7 +47,6 @@ public class FarAuto extends Robot {
     public void start() {
         if (getAlliance() == Alliance.UNKNOWN) return;
         timer = System.nanoTime();
-        runTimer = System.nanoTime();
 
         odometry.setPosition(getAlliance() == Alliance.RED ? START_RED : START_BLUE);
     }
@@ -58,18 +58,28 @@ public class FarAuto extends Robot {
         double delta = (System.nanoTime() - timer) / 1E9;
         timer = System.nanoTime();
 
+        Turret.Basket basket = turret.getBasket(getAlliance(), odometry.position, odometry.velocity);
+        turret.lock(basket, odometry.rotation.y, delta);
+
         switch (state) {
             case Collecting:
+                turret.shoot(0);
+                turret.retainStopper();
+
                 collector.setPower(1);
                 break;
             case Shooting:
-                collector.setPower(0);
-                // TODO
+                boolean canShoot = turret.canShoot(basket) && turret.isYawLocked(basket, odometry.rotation.y);
+
+                if (!canShoot && !didStartShooting) shotTimer = System.nanoTime();
+                else didStartShooting = true;
+
+                turret.shoot(basket, delta);
+                turret.releaseStopper();
+
+                collector.setPower(canShoot ? 1 : 0);
                 break;
         }
-
-        Turret.Basket basket = turret.getBasket(getAlliance(), odometry.position);
-        turret.lock(basket, odometry.rotation.y, delta);
 
         follower.update(delta, telemetry);
 
@@ -80,21 +90,22 @@ public class FarAuto extends Robot {
 
         switch (state) {
             case Shooting:
+                if ((System.nanoTime() - shotTimer) / 1E9 < 4) return;
+
                 if (!shotPreload) {
                     shotPreload = true;
                     state = State.Collecting;
 
                     follower.setPath(collectPath);
                 } else {
-                    if (finishedAt == 0) finishedAt = System.nanoTime();
-
-                    telemetry.addData("finished in", (finishedAt - runTimer) / 1E9);
-                    telemetry.update();
+                    requestOpModeStop();
                 }
 
                 break;
             case Collecting:
                 follower.setPath(null);
+
+                didStartShooting = false;
                 state = State.Shooting;
                 break;
         }
