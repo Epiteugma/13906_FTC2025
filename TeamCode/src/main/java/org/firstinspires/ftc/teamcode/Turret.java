@@ -19,6 +19,7 @@ public class Turret {
     public static final double MIN_ANGLE = MAX_ANGLE - Math.toRadians(12);
 
     static final double GRAVITY = 9.81;
+    static final double TARGET_VELOCITY_MULTIPLIER = 1.15;
 
     static final double BASKET_HEIGHT = 1.1;
     static final double TURRET_HEIGHT = 0.33;
@@ -100,6 +101,7 @@ public class Turret {
         static final double RPM = 6000;
 
         static final double EFFICIENCY = 0.4;
+        static final double ARTIFACT_LOAD_VELOCITY = 0.7;
 
         static final double FLYWHEEL_RADIUS = 0.045;
         static final double MAX_FLYWHEEL_VELOCITY = RPM * RATIO / 60.0 * (2 * Math.PI);
@@ -132,11 +134,11 @@ public class Turret {
         }
 
         public double toFlywheelVelocity(double velocity) {
-            return velocity / FLYWHEEL_RADIUS / EFFICIENCY;
+            return (velocity - ARTIFACT_LOAD_VELOCITY) / FLYWHEEL_RADIUS / EFFICIENCY;
         }
 
         public double toArtifactVelocity(double velocity) {
-            return EFFICIENCY * velocity * FLYWHEEL_RADIUS;
+            return EFFICIENCY * velocity * FLYWHEEL_RADIUS + ARTIFACT_LOAD_VELOCITY;
         }
 
         void setPower(double power) {
@@ -217,11 +219,11 @@ public class Turret {
     }
 
     public void shoot(Basket basket, double delta) {
-        shoot(shooter.toFlywheelVelocity(targetVelocity(basket) * 1.05), delta);
+        shoot(shooter.toFlywheelVelocity(targetVelocity(basket)), delta);
     }
 
     private double targetVelocity(Basket basket) {
-        return basket.shotVelocity(MAX_ANGLE);
+        return basket.shotVelocity(MAX_ANGLE) * TARGET_VELOCITY_MULTIPLIER;
     }
 
     public void lock(Basket basket, double robotYaw, double delta, Telemetry telemetry) {
@@ -247,7 +249,7 @@ public class Turret {
     }
 
     public boolean canShoot(Basket basket) {
-        double artifactVelocity = shooter.toArtifactVelocity(shooter.getFlywheelVelocity()) + 0.5;
+        double artifactVelocity = shooter.toArtifactVelocity(shooter.getFlywheelVelocity());
         double angle = basket.shotAngles(artifactVelocity)[0];
 
         return !Double.isNaN(angle) && MIN_ANGLE <= angle && angle <= MAX_ANGLE;
