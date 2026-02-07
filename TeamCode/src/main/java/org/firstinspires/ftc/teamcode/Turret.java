@@ -98,8 +98,8 @@ public class Turret {
         static final double RATIO_B = 10 / 15.0;
         static final double RPM = 6000;
 
-        static final double EFFICIENCY = 0.37;
-        static final double ARTIFACT_LOAD_VELOCITY = 0.85;
+        static final double EFFICIENCY = 0.35;
+        static final double ARTIFACT_LOAD_VELOCITY = 1.1;
 
         static final double FLYWHEEL_RADIUS = 0.045;
         static final double MAX_FLYWHEEL_VELOCITY = RPM * RATIO / 60.0 * (2 * Math.PI);
@@ -158,9 +158,9 @@ public class Turret {
         if (alliance == Robot.Alliance.UNKNOWN) return null;
 
         return new Basket(alliance == Robot.Alliance.RED ? RED_BASKET : BLUE_BASKET, new vec3(
-                robotPosition.x + robotVelocity.x * 0.2,
-                robotPosition.y + robotVelocity.y * 0.2,
-                robotPosition.z + robotVelocity.z * 0.2
+                robotPosition.x, // + robotVelocity.x * 0.2,
+                robotPosition.y, // + robotVelocity.y * 0.2,
+                robotPosition.z  // + robotVelocity.z * 0.2
         ));
     }
 
