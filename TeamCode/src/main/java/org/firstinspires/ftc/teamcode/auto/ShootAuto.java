@@ -7,7 +7,7 @@ import dev.zedboy.greatness.PathBuilder;
 import dev.zedboy.greatness.math.vec3;
 
 public class ShootAuto extends Robot {
-    public static final double SHOT_TIMEOUT = 5;
+    public static final double SHOT_CYCLE_TIME = 1.5;
 
     public static final vec3 START_RED = new vec3(0.82, 0, 1.6);
     public static final vec3 START_BLUE = new vec3(-0.82, 0, 1.6);
@@ -15,10 +15,10 @@ public class ShootAuto extends Robot {
     public static final vec3 SHOOT_RED = new vec3(0.3, 0, 0.3);
     public static final vec3 SHOOT_BLUE = new vec3(-0.3, 0, 0.3);
 
-    public static final vec3 GATE_RED = new vec3(1.4, 0, 0);
-    public static final vec3 GATE_BLUE = new vec3(-1.4, 0, 0);
+    public static final vec3 GATE_RED = new vec3(1.45, 0, 0);
+    public static final vec3 GATE_BLUE = new vec3(-1.45, 0, 0);
 
-    public static final int OPEN_GATE_AFTER = -1;
+    public static final int OPEN_GATE_AFTER = 2;
     public static final double GATE_WAIT_TIME = 1;
 
     public static class ArtifactRow {
@@ -33,20 +33,20 @@ public class ShootAuto extends Robot {
         }
     }
 
-    ArtifactRow redClose = new ArtifactRow(new vec3(0.8, 0, 0.3), 0.55, Alliance.RED);
-    ArtifactRow redMiddle = new ArtifactRow(new vec3(0.8, 0, -0.3), 0.75, Alliance.RED);
-    ArtifactRow redFar = new ArtifactRow(new vec3(0.8, 0, -0.9), 0.75, Alliance.RED);
+    ArtifactRow redClose = new ArtifactRow(new vec3(0.7, 0, 0.3), 0.7, Alliance.RED);
+    ArtifactRow redMiddle = new ArtifactRow(new vec3(0.7, 0, -0.3), 0.8, Alliance.RED);
+    ArtifactRow redFar = new ArtifactRow(new vec3(0.7, 0, -0.9), 0.8, Alliance.RED);
 
-    ArtifactRow blueClose = new ArtifactRow(new vec3(-0.8, 0, 0.3), 0.55, Alliance.BLUE);
-    ArtifactRow blueMiddle = new ArtifactRow(new vec3(-0.8, 0, -0.3), 0.75, Alliance.BLUE);
-    ArtifactRow blueFar = new ArtifactRow(new vec3(-0.8, 0, -0.9), 0.75, Alliance.BLUE);
+    ArtifactRow blueClose = new ArtifactRow(new vec3(-0.7, 0, 0.3), 0.7, Alliance.BLUE);
+    ArtifactRow blueMiddle = new ArtifactRow(new vec3(-0.7, 0, -0.3), 0.8, Alliance.BLUE);
+    ArtifactRow blueFar = new ArtifactRow(new vec3(-0.7, 0, -0.9), 0.8, Alliance.BLUE);
 
     long timer;
     long shotTimer;
     long gateTimer;
     int rowsCollected = 0;
+    boolean startedShooting = false;
 
-    Turret.ShotTrack shotTrack;
     ArtifactRow[] artifactRows;
     State state = State.MovingToShoot;
 
@@ -63,7 +63,6 @@ public class ShootAuto extends Robot {
         if (getAlliance() == Alliance.UNKNOWN) return;
 
         timer = System.nanoTime();
-        shotTrack = new Turret.ShotTrack(turret.shooter);
 
         switch (getAlliance()) {
             case RED:
@@ -95,10 +94,6 @@ public class ShootAuto extends Robot {
 
         follower.update(delta);
 
-        telemetry.addData("shot track", shotTrack.getShots());
-        telemetry.addData("shooter gradient", shotTrack.lastGradient);
-        telemetry.update();
-
         Turret.Basket basket = turret.getBasket(getAlliance(), odometry.position, odometry.velocity);
         turret.lock(basket, odometry.rotation.y, delta);
 
@@ -106,9 +101,14 @@ public class ShootAuto extends Robot {
             case Shooting:
                 turret.shoot(basket, delta);
                 turret.releaseStopper();
-                shotTrack.update();
 
                 boolean canShoot = turret.canShoot(basket) && turret.isYawLocked(basket, odometry.rotation.y);
+
+                if (!startedShooting) {
+                    shotTimer = System.nanoTime();
+                    if (canShoot) startedShooting = true;
+                }
+
                 collector.setPower(canShoot ? 1 : 0);
                 break;
             case MovingToShoot:
@@ -133,7 +133,7 @@ public class ShootAuto extends Robot {
 
         switch (state) {
             case Shooting:
-                if (shotTrack.getShots() < 3 && (System.nanoTime() - shotTimer) / 1E9 < SHOT_TIMEOUT) return;
+                if ((System.nanoTime() - shotTimer) / 1E9 < SHOT_CYCLE_TIME) return;
 
                 if (rowsCollected >= artifactRows.length) {
                     requestOpModeStop();
@@ -162,11 +162,10 @@ public class ShootAuto extends Robot {
                 break;
             case MovingToShoot:
             case Collecting:
-                shotTrack.resetShots();
-
                 if (state == State.Collecting) rowsCollected++;
 
                 shotTimer = System.nanoTime();
+                startedShooting = false;
                 state = rowsCollected == OPEN_GATE_AFTER && state == State.Collecting ? State.MovingToGate : State.Shooting;
 
                 if (state == State.MovingToGate) {

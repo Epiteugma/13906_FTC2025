@@ -154,47 +154,6 @@ public class Turret {
         }
     }
 
-    public static class ShotTrack {
-        static final double SNAPSHOT_INTERVAL = 0.05;
-        static final double GRADIENT_THRESHOLD = -10;
-
-        Shooter shooter;
-        long lastSnapshot;
-        double lastVelocity;
-
-        public double lastGradient;
-        short shots = 0;
-
-        public ShotTrack(Shooter shooter) {
-            this.shooter = shooter;
-        }
-
-        public int getShots() {
-            return shots;
-        }
-
-        public void resetShots() {
-            shots = 0;
-
-            lastSnapshot = System.nanoTime();
-            lastVelocity = 0;
-        }
-
-        public void update() {
-            double timeSinceLastSnapshot = (System.nanoTime() - lastSnapshot) / 1E9;
-            if (timeSinceLastSnapshot < SNAPSHOT_INTERVAL) return;
-
-            double velocity = shooter.toArtifactVelocity(shooter.getFlywheelVelocity());
-            double gradient = (velocity - lastVelocity) / SNAPSHOT_INTERVAL;
-
-            lastSnapshot = System.nanoTime();
-            lastVelocity = velocity;
-            lastGradient = gradient;
-
-            if (gradient <= GRADIENT_THRESHOLD) shots++;
-        }
-    }
-
     public Basket getBasket(Robot.Alliance alliance, vec3 robotPosition, vec3 robotVelocity) {
         if (alliance == Robot.Alliance.UNKNOWN) return null;
 
