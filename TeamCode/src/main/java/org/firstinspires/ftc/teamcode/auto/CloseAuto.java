@@ -1,12 +1,13 @@
 package org.firstinspires.ftc.teamcode.auto;
 
 import org.firstinspires.ftc.teamcode.Robot;
+import org.firstinspires.ftc.teamcode.SharedState;
 import org.firstinspires.ftc.teamcode.Turret;
 
 import dev.zedboy.greatness.PathBuilder;
 import dev.zedboy.greatness.math.vec3;
 
-public class ShootAuto extends Robot {
+public class CloseAuto extends Robot {
     public static final double SHOT_CYCLE_TIME = 1.5;
 
     public static final vec3 START_RED = new vec3(0.82, 0, 1.6);
@@ -18,7 +19,7 @@ public class ShootAuto extends Robot {
     public static final vec3 GATE_RED = new vec3(1.45, 0, 0);
     public static final vec3 GATE_BLUE = new vec3(-1.45, 0, 0);
 
-    public static final int OPEN_GATE_AFTER = 2;
+    public static final int OPEN_GATE_AFTER = -1;
     public static final double GATE_WAIT_TIME = 1;
 
     public static class ArtifactRow {
@@ -55,7 +56,8 @@ public class ShootAuto extends Robot {
         MovingToGate,
         AtGate,
         Shooting,
-        Collecting
+        Collecting,
+        Idle
     }
 
     @Override
@@ -127,6 +129,10 @@ public class ShootAuto extends Robot {
             case AtGate:
                 collector.setPower(0);
                 break;
+            case Idle:
+                turret.shoot(0);
+                collector.setPower(0);
+                break;
         }
 
         if (!follower.done()) return;
@@ -136,7 +142,7 @@ public class ShootAuto extends Robot {
                 if ((System.nanoTime() - shotTimer) / 1E9 < SHOT_CYCLE_TIME) return;
 
                 if (rowsCollected >= artifactRows.length) {
-                    requestOpModeStop();
+                    state = State.Idle;
                     return;
                 }
 
@@ -204,4 +210,14 @@ public class ShootAuto extends Robot {
         }
     }
 
+    @Override
+    public void stop() {
+        SharedState state = new SharedState();
+
+        state.position = odometry.position;
+        state.rotation = odometry.rotation;
+        state.turretYaw = turret.currentYaw();
+
+        SharedState.instance = state;
+    }
 }

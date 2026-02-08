@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.auto;
 
 import org.firstinspires.ftc.teamcode.Robot;
+import org.firstinspires.ftc.teamcode.SharedState;
 import org.firstinspires.ftc.teamcode.Turret;
 
 import dev.zedboy.greatness.Path;
@@ -41,7 +42,9 @@ public class FarAuto extends Robot {
             .build();
 
     enum State {
-        Shooting, Collecting
+        Shooting,
+        Collecting,
+        Idle
     }
 
     @Override
@@ -83,6 +86,10 @@ public class FarAuto extends Robot {
 
                 collector.setPower(canShoot ? 1 : 0);
                 break;
+            case Idle:
+                turret.shoot(0);
+                collector.setPower(0);
+                break;
         }
 
         follower.update(delta, telemetry);
@@ -102,7 +109,7 @@ public class FarAuto extends Robot {
 
                     follower.setPath(collectPath);
                 } else {
-                    requestOpModeStop();
+                    state = State.Idle;
                 }
 
                 break;
@@ -114,5 +121,16 @@ public class FarAuto extends Robot {
                 state = State.Shooting;
                 break;
         }
+    }
+
+    @Override
+    public void stop() {
+        SharedState state = new SharedState();
+
+        state.position = odometry.position;
+        state.rotation = odometry.rotation;
+        state.turretYaw = turret.currentYaw();
+
+        SharedState.instance = state;
     }
 }

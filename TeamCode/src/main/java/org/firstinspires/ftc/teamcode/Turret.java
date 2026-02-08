@@ -38,6 +38,7 @@ public class Turret {
     final double yawDirection;
     PIDFController yawPIDF = new PIDFController(2, 0, 0.05);
 
+    public double yawOrigin = 0;
     public double yawOffset = 0;
 
     public Turret(HardwareMap hardwareMap, Robot.HardwareLayout hardwareLayout) {
@@ -98,8 +99,8 @@ public class Turret {
         static final double RATIO_B = 10 / 15.0;
         static final double RPM = 6000;
 
-        static final double EFFICIENCY = 0.35;
-        static final double ARTIFACT_LOAD_VELOCITY = 1.1;
+        static final double EFFICIENCY = 0.38;
+        static final double ARTIFACT_LOAD_VELOCITY = 0.75;
 
         static final double FLYWHEEL_RADIUS = 0.045;
         static final double MAX_FLYWHEEL_VELOCITY = RPM * RATIO / 60.0 * (2 * Math.PI);
@@ -164,8 +165,8 @@ public class Turret {
         ));
     }
 
-    private double currentYaw() {
-        return yawEncoder.getCurrentPosition() * yawDirection / YAW_TPR * (2 * Math.PI);
+    public double currentYaw() {
+        return yawOrigin + yawEncoder.getCurrentPosition() * yawDirection / YAW_TPR * (2 * Math.PI);
     }
 
     public boolean isYawLocked(Basket basket, double robotYaw) {

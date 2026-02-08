@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.teleop;
 
 import org.firstinspires.ftc.teamcode.Robot;
+import org.firstinspires.ftc.teamcode.SharedState;
 import org.firstinspires.ftc.teamcode.Turret;
 import org.firstinspires.ftc.teamcode.ZoneManager;
 import org.firstinspires.ftc.teamcode.auto.FarAuto;
@@ -19,7 +20,15 @@ public class Drive extends Robot {
         timer = System.nanoTime();
         shootingSwitchTime = System.nanoTime();
 
-        // TODO: inherit state from auto rather than using parking auto start position
+        SharedState state = SharedState.instance;
+
+        if (state != null) {
+            odometry.setPosition(state.position, state.rotation);
+            turret.yawOrigin = state.turretYaw;
+
+            SharedState.instance = null;
+            return;
+        }
 
         switch (getAlliance()) {
             case RED:

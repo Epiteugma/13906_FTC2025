@@ -4,12 +4,12 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
 import org.firstinspires.ftc.teamcode.Robot;
 
-@Autonomous(name = "Shoot Auto [BLUE]", group = "FTC2025")
-public class ShootAutoBlue extends ShootAuto {
+@Autonomous(name = "Close Auto [RED]", group = "FTC2025")
+public class CloseAutoRed extends CloseAuto {
 
     @Override
     public Robot.Alliance getAlliance() {
-        return Robot.Alliance.BLUE;
+        return Robot.Alliance.RED;
     }
 
 }
