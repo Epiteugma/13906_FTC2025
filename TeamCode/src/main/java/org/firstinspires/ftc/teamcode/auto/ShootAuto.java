@@ -1,38 +1,58 @@
 package org.firstinspires.ftc.teamcode.auto;
 
 import org.firstinspires.ftc.teamcode.Robot;
+import org.firstinspires.ftc.teamcode.Turret;
 
+import dev.zedboy.greatness.Path;
 import dev.zedboy.greatness.PathBuilder;
 import dev.zedboy.greatness.math.vec3;
 
 public class ShootAuto extends Robot {
-    public static final vec3 START_RED = new vec3(0.4, 0, -1.6);
+    public static final double SHOT_TIMEOUT = 5;
+
+    public static final vec3 START_RED = new vec3(0.82, 0, 1.6);
     public static final vec3 START_BLUE = new vec3(-0.82, 0, 1.6);
 
     public static final vec3 SHOOT_RED = new vec3(-0.3, 0, 0.3);
     public static final vec3 SHOOT_BLUE = new vec3(-0.3, 0, 0.3);
 
-    public static final vec3 COLLECT_LINE1_RED = new vec3(-1.3, 0, 0.3);
-    public static final vec3 COLLECT_LINE1_BLUE = new vec3(-1.3, 0, 0.3);
+    public static final vec3 GATE_RED = new vec3(1.4, 0, 0);
+    public static final vec3 GATE_BLUE = new vec3(-1.4, 0, 0);
+    public static final double GATE_APPROACH_DISTANCE = 0.3;
+    public static final int OPEN_GATE_AFTER_COLLECTED = 1;
 
-    public static final vec3 COLLECT_LINE2_RED_START = new vec3(-0.6, 0, -0.3);
-    public static final vec3 COLLECT_LINE2_BLUE_START = new vec3(-0.6, 0, -0.3);
+    public static class ArtifactRow {
+        public final vec3 start;
+        public final vec3 end;
 
-    public static final vec3 COLLECT_LINE2_RED = new vec3(-1.3, 0, -0.3);
-    public static final vec3 COLLECT_LINE2_BLUE = new vec3(-1.3, 0, -0.3);
+        public ArtifactRow(vec3 start, double length, Alliance alliance) {
+            double endX = start.x + length * (alliance == Alliance.RED ? 1 : -1);
 
-    public static final vec3 COLLECT_LINE3_RED_START = new vec3(-0.6, 0, -0.9);
-    public static final vec3 COLLECT_LINE3_BLUE_START = new vec3(-0.6, 0, -0.9);
+            this.start = start;
+            end = new vec3(endX, start.y, start.z);
+        }
+    }
 
-    public static final vec3 COLLECT_LINE3_RED = new vec3(-1.3, 0, -0.9);
-    public static final vec3 COLLECT_LINE3_BLUE = new vec3(-1.3, 0, -0.9);
+    ArtifactRow redClose = new ArtifactRow(new vec3(0.8, 0, 0.3), 0.55, Alliance.RED);
+    ArtifactRow redMiddle = new ArtifactRow(new vec3(0.8, 0, -0.3), 0.75, Alliance.RED);
+    ArtifactRow redFar = new ArtifactRow(new vec3(0.8, 0, -0.9), 0.75, Alliance.RED);
+
+    ArtifactRow blueClose = new ArtifactRow(new vec3(-0.8, 0, 0.3), 0.55, Alliance.BLUE);
+    ArtifactRow blueMiddle = new ArtifactRow(new vec3(-0.8, 0, -0.3), 0.75, Alliance.BLUE);
+    ArtifactRow blueFar = new ArtifactRow(new vec3(-0.8, 0, -0.9), 0.75, Alliance.BLUE);
 
     long timer;
-    int collected = 0;
-    State state = State.MovingToShoot;
+    long shotTimer;
+    int rowsCollected = 0;
+
+    Turret.ShotTrack shotTrack;
+    ArtifactRow[] artifactRows;
+    State state = State.MovingFromStart;
 
     enum State {
-        MovingToShoot, Shooting, MovingToArtifacts, Collecting
+        MovingFromStart,
+        Shooting,
+        Collecting
     }
 
     @Override
@@ -40,27 +60,27 @@ public class ShootAuto extends Robot {
         if (getAlliance() == Alliance.UNKNOWN) return;
 
         timer = System.nanoTime();
+        shotTrack = new Turret.ShotTrack(turret.shooter);
+
+        switch (getAlliance()) {
+            case RED:
+                artifactRows = new ArtifactRow[]{redClose, redMiddle, redFar};
+                break;
+            case BLUE:
+                artifactRows = new ArtifactRow[]{blueClose, blueMiddle, blueFar};
+                break;
+        }
 
         odometry.setPosition(getAlliance() == Alliance.RED ? START_RED : START_BLUE);
+
         follower.setPath(
                 new PathBuilder()
                         .startAt(getAlliance() == Alliance.RED ? START_RED : START_BLUE)
                         .lineTo(getAlliance() == Alliance.RED ? SHOOT_RED : SHOOT_BLUE)
-                        /* .turnTo(0, 0, 0)
-                        .lineTo(getAlliance() == Alliance.RED ? COLLECT_LINE1_RED : COLLECT_LINE1_BLUE)
-                        .turnTo(0,Math.toRadians(90), 0, 0.5)
-                        .lineTo(getAlliance() == Alliance.RED ? SHOOT_RED : SHOOT_BLUE)
-                        .lineTo(getAlliance() == Alliance.RED ? COLLECT_LINE2_RED_START : COLLECT_LINE2_BLUE_START)
-                        .lineTo(getAlliance() == Alliance.RED ? COLLECT_LINE2_RED : COLLECT_LINE2_BLUE)
-                        .lineTo(getAlliance() == Alliance.RED ? SHOOT_RED : SHOOT_BLUE)
-                        .lineTo(getAlliance() == Alliance.RED ? COLLECT_LINE3_RED_START : COLLECT_LINE3_BLUE_START)
-                        .lineTo(getAlliance() == Alliance.RED ? COLLECT_LINE3_RED : COLLECT_LINE3_BLUE)
-                        .lineTo(getAlliance() == Alliance.RED ? SHOOT_RED : SHOOT_BLUE)
-                        */ // im fried
+                        .turnTo(0, Math.toRadians(getAlliance() == Alliance.RED ? -90 : 90), 0)
                         .build()
 
         );
-
     }
 
     @Override
@@ -70,16 +90,73 @@ public class ShootAuto extends Robot {
         double delta = (System.nanoTime() - timer) / 1E9;
         timer = System.nanoTime();
 
-        // TODO: state while pathing
-
         follower.update(delta);
 
-        turret.shoot(0.5);
-        collector.setPower(1);
+        telemetry.addData("shot track", shotTrack.getShots());
+        telemetry.addData("shooter gradient", shotTrack.lastGradient);
+        telemetry.update();
+
+        Turret.Basket basket = turret.getBasket(getAlliance(), odometry.position, odometry.velocity);
+        turret.lock(basket, odometry.rotation.y, delta);
+
+        switch (state) {
+            case Shooting:
+                turret.shoot(basket, delta);
+                turret.releaseStopper();
+                shotTrack.update();
+
+                boolean canShoot = turret.canShoot(basket) && turret.isYawLocked(basket, odometry.rotation.y);
+                collector.setPower(canShoot ? 1 : 0);
+                break;
+            case MovingFromStart:
+                turret.releaseStopper();
+                collector.setPower(0);
+                break;
+            case Collecting:
+                turret.shoot(0);
+                turret.retainStopper();
+
+                collector.setPower(1);
+                break;
+        }
 
         if (!follower.done()) return;
 
-        follower.setPath(null);
+        switch (state) {
+            case Shooting:
+                if (shotTrack.getShots() < 3 && (System.nanoTime() - shotTimer) / 1E9 < SHOT_TIMEOUT) return;
+
+                if (rowsCollected >= artifactRows.length) {
+                    requestOpModeStop();
+                    return;
+                }
+
+                ArtifactRow artifactRow = artifactRows[rowsCollected];
+
+                follower.setPath(
+                        new PathBuilder()
+                                .startAt(getAlliance() == Alliance.RED ? SHOOT_RED : SHOOT_BLUE)
+                                .startHeading(0, Math.toRadians(getAlliance() == Alliance.RED ? -90 : 90), 0)
+                                .lineTo(artifactRow.start)
+                                .lineTo(artifactRow.end)
+                                .lineTo(artifactRow.start)
+                                .lineTo(getAlliance() == Alliance.RED ? SHOOT_RED : SHOOT_BLUE)
+                                .build()
+                );
+
+                state = State.Collecting;
+                break;
+            case MovingFromStart:
+            case Collecting:
+                follower.setPath(null);
+                shotTrack.resetShots();
+
+                if (state == State.Collecting) rowsCollected++;
+
+                shotTimer = System.nanoTime();
+                state = State.Shooting;
+                break;
+        }
     }
 
 }

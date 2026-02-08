@@ -21,11 +21,9 @@ public class FarAuto extends Robot {
     static final vec3 SHOOT_BLUE = new vec3(-0.5, 0, -1.5);
 
     long timer;
-
-    long shotTimer;
-    boolean didStartShooting = false;
     boolean shotPreload = false;
 
+    Turret.ShotTrack shotTrack;
     State state = State.Shooting;
 
     Path collectPath = new PathBuilder()
@@ -46,7 +44,9 @@ public class FarAuto extends Robot {
     @Override
     public void start() {
         if (getAlliance() == Alliance.UNKNOWN) return;
+
         timer = System.nanoTime();
+        shotTrack = new Turret.ShotTrack(turret.shooter);
 
         odometry.setPosition(getAlliance() == Alliance.RED ? START_RED : START_BLUE);
     }
@@ -71,11 +71,9 @@ public class FarAuto extends Robot {
             case Shooting:
                 boolean canShoot = turret.canShoot(basket) && turret.isYawLocked(basket, odometry.rotation.y);
 
-                if (!canShoot && !didStartShooting) shotTimer = System.nanoTime();
-                else didStartShooting = true;
-
                 turret.shoot(basket, delta);
                 turret.releaseStopper();
+                shotTrack.update();
 
                 collector.setPower(canShoot ? 1 : 0);
                 break;
@@ -90,7 +88,7 @@ public class FarAuto extends Robot {
 
         switch (state) {
             case Shooting:
-                if ((System.nanoTime() - shotTimer) / 1E9 < 4) return;
+                if (shotTrack.getShots() < 3) return;
 
                 if (!shotPreload) {
                     shotPreload = true;
@@ -104,8 +102,8 @@ public class FarAuto extends Robot {
                 break;
             case Collecting:
                 follower.setPath(null);
+                shotTrack.resetShots();
 
-                didStartShooting = false;
                 state = State.Shooting;
                 break;
         }
