@@ -3,7 +3,6 @@ package org.firstinspires.ftc.teamcode.auto;
 import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.Turret;
 
-import dev.zedboy.greatness.Path;
 import dev.zedboy.greatness.PathBuilder;
 import dev.zedboy.greatness.math.vec3;
 
@@ -13,13 +12,14 @@ public class ShootAuto extends Robot {
     public static final vec3 START_RED = new vec3(0.82, 0, 1.6);
     public static final vec3 START_BLUE = new vec3(-0.82, 0, 1.6);
 
-    public static final vec3 SHOOT_RED = new vec3(-0.3, 0, 0.3);
+    public static final vec3 SHOOT_RED = new vec3(0.3, 0, 0.3);
     public static final vec3 SHOOT_BLUE = new vec3(-0.3, 0, 0.3);
 
     public static final vec3 GATE_RED = new vec3(1.4, 0, 0);
     public static final vec3 GATE_BLUE = new vec3(-1.4, 0, 0);
-    public static final double GATE_APPROACH_DISTANCE = 0.3;
-    public static final int OPEN_GATE_AFTER_COLLECTED = 1;
+
+    public static final int OPEN_GATE_AFTER = -1;
+    public static final double GATE_WAIT_TIME = 1;
 
     public static class ArtifactRow {
         public final vec3 start;
@@ -43,14 +43,17 @@ public class ShootAuto extends Robot {
 
     long timer;
     long shotTimer;
+    long gateTimer;
     int rowsCollected = 0;
 
     Turret.ShotTrack shotTrack;
     ArtifactRow[] artifactRows;
-    State state = State.MovingFromStart;
+    State state = State.MovingToShoot;
 
     enum State {
-        MovingFromStart,
+        MovingToShoot,
+        MovingToGate,
+        AtGate,
         Shooting,
         Collecting
     }
@@ -108,8 +111,10 @@ public class ShootAuto extends Robot {
                 boolean canShoot = turret.canShoot(basket) && turret.isYawLocked(basket, odometry.rotation.y);
                 collector.setPower(canShoot ? 1 : 0);
                 break;
-            case MovingFromStart:
+            case MovingToShoot:
+                turret.shoot(basket, delta);
                 turret.releaseStopper();
+
                 collector.setPower(0);
                 break;
             case Collecting:
@@ -117,6 +122,10 @@ public class ShootAuto extends Robot {
                 turret.retainStopper();
 
                 collector.setPower(1);
+                break;
+            case MovingToGate:
+            case AtGate:
+                collector.setPower(0);
                 break;
         }
 
@@ -132,29 +141,66 @@ public class ShootAuto extends Robot {
                 }
 
                 ArtifactRow artifactRow = artifactRows[rowsCollected];
+                PathBuilder collectPathBuilder = new PathBuilder()
+                        .startAt(getAlliance() == Alliance.RED ? SHOOT_RED : SHOOT_BLUE)
+                        .startHeading(0, Math.toRadians(getAlliance() == Alliance.RED ? -90 : 90), 0)
+                        .lineTo(artifactRow.start)
+                        .lineTo(artifactRow.end)
+                        .lineTo(artifactRow.start);
 
-                follower.setPath(
-                        new PathBuilder()
-                                .startAt(getAlliance() == Alliance.RED ? SHOOT_RED : SHOOT_BLUE)
-                                .startHeading(0, Math.toRadians(getAlliance() == Alliance.RED ? -90 : 90), 0)
-                                .lineTo(artifactRow.start)
-                                .lineTo(artifactRow.end)
-                                .lineTo(artifactRow.start)
-                                .lineTo(getAlliance() == Alliance.RED ? SHOOT_RED : SHOOT_BLUE)
-                                .build()
-                );
+                if (rowsCollected == OPEN_GATE_AFTER - 1) {
+                    follower.setPath(collectPathBuilder.build());
+                } else {
+                    follower.setPath(
+                            collectPathBuilder
+                                    .lineTo(getAlliance() == Alliance.RED ? SHOOT_RED : SHOOT_BLUE)
+                                    .build()
+                    );
+                }
 
                 state = State.Collecting;
                 break;
-            case MovingFromStart:
+            case MovingToShoot:
             case Collecting:
-                follower.setPath(null);
                 shotTrack.resetShots();
 
                 if (state == State.Collecting) rowsCollected++;
 
                 shotTimer = System.nanoTime();
-                state = State.Shooting;
+                state = rowsCollected == OPEN_GATE_AFTER && state == State.Collecting ? State.MovingToGate : State.Shooting;
+
+                if (state == State.MovingToGate) {
+                    ArtifactRow justCollected = artifactRows[OPEN_GATE_AFTER - 1];
+
+                    follower.setPath(
+                            new PathBuilder()
+                                    .startAt(justCollected.start)
+                                    .startHeading(0, Math.toRadians(getAlliance() == Alliance.RED ? -90 : 90), 0)
+                                    .lineTo(getAlliance() == Alliance.RED ? GATE_RED : GATE_BLUE)
+                                    .build()
+                    );
+                } else {
+                    follower.setPath(null);
+                }
+                break;
+            case MovingToGate:
+                follower.setPath(null);
+
+                gateTimer = System.nanoTime();
+                state = State.AtGate;
+                break;
+            case AtGate:
+                if ((System.nanoTime() - gateTimer) / 1E9 < GATE_WAIT_TIME) return;
+
+                follower.setPath(
+                        new PathBuilder()
+                                .startAt(getAlliance() == Alliance.RED ? GATE_RED : GATE_BLUE)
+                                .startHeading(0, Math.toRadians(getAlliance() == Alliance.RED ? -90 : 90), 0)
+                                .lineTo(getAlliance() == Alliance.RED ? SHOOT_RED : SHOOT_BLUE)
+                                .build()
+                );
+
+                state = State.MovingToShoot;
                 break;
         }
     }
