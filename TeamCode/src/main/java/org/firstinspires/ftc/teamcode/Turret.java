@@ -17,7 +17,6 @@ public class Turret {
     public static final double MIN_ANGLE = MAX_ANGLE - Math.toRadians(12);
 
     static final double GRAVITY = 9.81;
-    static final double TARGET_VELOCITY_MULTIPLIER = 1.1;
 
     static final double BASKET_HEIGHT = 1.15;
     static final double TURRET_HEIGHT = 0.33;
@@ -99,8 +98,10 @@ public class Turret {
         static final double RATIO_B = 10 / 15.0;
         static final double RPM = 6000;
 
-        static final double EFFICIENCY = 0.35;
-        static final double ARTIFACT_LOAD_VELOCITY = 1.1;
+        static final double EFFICIENCY = 0.4;
+        static final double ARTIFACT_LOAD_VELOCITY = 1.0;
+        static final double TARGET_VELOCITY_MULTIPLIER = 1.1;
+        static final double POST_SHOT_TOLERANCE = 1.55;
 
         static final double FLYWHEEL_RADIUS = 0.045;
         static final double MAX_FLYWHEEL_VELOCITY = RPM * RATIO / 60.0 * (2 * Math.PI);
@@ -148,7 +149,7 @@ public class Turret {
         void setVelocity(double velocity, double delta) {
             if (Double.isNaN(velocity)) return;
 
-            double power = pidf.update(velocity, getFlywheelVelocity(), delta);
+            double power = pidf.update(velocity * TARGET_VELOCITY_MULTIPLIER, getFlywheelVelocity(), delta);
 
             motor.setPower(power);
             motorB.setPower(power * RATIO_B / RATIO);
@@ -227,7 +228,7 @@ public class Turret {
     }
 
     private double targetVelocity(Basket basket) {
-        return basket.shotVelocity(MAX_ANGLE) * TARGET_VELOCITY_MULTIPLIER;
+        return basket.shotVelocity(MAX_ANGLE);
     }
 
     public void lock(Basket basket, double robotYaw, double delta, Telemetry telemetry) {
@@ -262,11 +263,16 @@ public class Turret {
         return basketStartY + TURRET_HEIGHT > 1;
     }
 
+    boolean couldShoot = false;
+
     public boolean canShoot(Basket basket) {
-        double artifactVelocity = shooter.toArtifactVelocity(shooter.getFlywheelVelocity());
+        double artifactVelocity = shooter.toArtifactVelocity(shooter.getFlywheelVelocity()) + (couldShoot ? Shooter.POST_SHOT_TOLERANCE / basket.shotDistance.x : 0);
         double angle = basket.shotAngles(artifactVelocity)[0];
 
-        return !Double.isNaN(angle) && MIN_ANGLE <= angle && angle <= MAX_ANGLE && willNotHitWall(basket);
+        boolean canShoot = !Double.isNaN(angle) && MIN_ANGLE <= angle && angle <= MAX_ANGLE && willNotHitWall(basket);
+        couldShoot = canShoot;
+
+        return canShoot;
     }
 
     public void retainStopper() {
