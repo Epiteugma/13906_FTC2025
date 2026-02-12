@@ -34,6 +34,7 @@ public abstract class Robot extends OpMode {
     protected DcMotor collector;
 
     protected Turret turret;
+    protected ArtifactTracker artifacts;
     protected Odometry odometry;
 
     protected Follower follower;
@@ -87,6 +88,7 @@ public abstract class Robot extends OpMode {
         follower.angular.kP = 0.1;
 
         turret = new Turret(hardwareMap, getHardwareLayout());
+        artifacts = new ArtifactTracker(hardwareMap);
     }
 
     public HardwareLayout getHardwareLayout() {
