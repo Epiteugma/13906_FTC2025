@@ -35,7 +35,7 @@ public class Turret {
     CRServo yaw;
     DcMotor yawEncoder;
     final double yawDirection;
-    PIDFController yawPIDF = new PIDFController(2, 0, 0.05);
+    PIDFController yawPIDF = new PIDFController(1.5, 0, 0);
 
     public double yawOrigin = 0;
     public double yawOffset = 0;

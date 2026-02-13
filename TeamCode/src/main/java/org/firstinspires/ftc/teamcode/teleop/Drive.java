@@ -72,10 +72,6 @@ public class Drive extends Robot {
         backRight.setPower(y + x + w);
 
         boolean canShoot = turret.canShoot(basket) && turret.isYawLocked(basket, odometry.rotation.y);
-        if (shooting && canShoot) artifacts.count = 0; // TODO: THIS IS TEMPORARY AND VERY HACKY!
-
-        artifacts.poll();
-        artifacts.updateLEDs();
 
         turret.lock(basket, odometry.rotation.y, delta, telemetry);
 
@@ -87,7 +83,7 @@ public class Drive extends Robot {
             turret.retainStopper();
         }
 
-        collector.setPower((System.nanoTime() - shootingSwitchTime) / 1E9 > 0.5 && (!shooting && artifacts.count < 3 || shooting && canShoot) ? 1 : 0);
+        collector.setPower((System.nanoTime() - shootingSwitchTime) / 1E9 > 0.5 && (!shooting || canShoot) ? 1 : 0);
 
         telemetry.addLine("Odometry");
         telemetry.addData("x (m)", odometry.position.x);
