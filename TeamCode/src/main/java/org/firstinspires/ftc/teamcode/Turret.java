@@ -18,11 +18,11 @@ public class Turret {
 
     static final double GRAVITY = 9.81;
 
-    static final double BASKET_HEIGHT = 1.15;
+    static final double BASKET_HEIGHT = 1.1;
     static final double TURRET_HEIGHT = 0.33;
 
     static final double YAW_RANGE_OFFSET = Math.toRadians(-45);
-    static final double YAW_TPR = 8192 * (114 / 20.0);
+    static final double YAW_TPR = 8192 * (114 / 20.0) * 0.95;
 
     static final vec2 BLUE_BASKET = new vec2(-1.70, 1.70);
     static final vec2 RED_BASKET = new vec2(1.70, 1.70);
@@ -98,10 +98,9 @@ public class Turret {
         static final double RATIO_B = 10 / 15.0;
         static final double RPM = 6000;
 
-        static final double EFFICIENCY = 0.4;
-        static final double ARTIFACT_LOAD_VELOCITY = 1.0;
-        static final double TARGET_VELOCITY_MULTIPLIER = 1.18;
-        static final double POST_SHOT_TOLERANCE = 1.8;
+        static final double EFFICIENCY = 0.46;
+        static final double TARGET_VELOCITY_MULTIPLIER = 1.15;
+        static final double POST_SHOT_TOLERANCE = 1.5;
 
         static final double FLYWHEEL_RADIUS = 0.045;
         static final double MAX_FLYWHEEL_VELOCITY = RPM * RATIO / 60.0 * (2 * Math.PI);
@@ -134,11 +133,11 @@ public class Turret {
         }
 
         public double toFlywheelVelocity(double velocity) {
-            return (velocity - ARTIFACT_LOAD_VELOCITY) / FLYWHEEL_RADIUS / EFFICIENCY;
+            return velocity / FLYWHEEL_RADIUS / EFFICIENCY;
         }
 
         public double toArtifactVelocity(double velocity) {
-            return EFFICIENCY * velocity * FLYWHEEL_RADIUS + ARTIFACT_LOAD_VELOCITY;
+            return EFFICIENCY * velocity * FLYWHEEL_RADIUS;
         }
 
         void setPower(double power) {

@@ -79,7 +79,7 @@ public class Drive extends Robot {
             turret.shoot(basket, delta);
             turret.releaseStopper();
         } else {
-            turret.shoot(0.75);
+            turret.shoot(0.5);
             turret.retainStopper();
         }
 
