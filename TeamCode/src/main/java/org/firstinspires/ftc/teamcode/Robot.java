@@ -14,7 +14,6 @@ import dev.zedboy.greatness.Odometry;
 import dev.zedboy.greatness.ftc.Follower;
 import dev.zedboy.greatness.ftc.kinematics.Mecanum;
 import dev.zedboy.greatness.math.vec2;
-import dev.zedboy.greatness.math.vec3;
 
 public abstract class Robot extends OpMode {
     private static final ZoneManager.OBB[] COLLISION_BOXES = new ZoneManager.OBB[]{
@@ -31,7 +30,19 @@ public abstract class Robot extends OpMode {
 
     protected DcMotor[] driveTrain;
 
-    protected DcMotor collector;
+    public static class MotorGroup {
+        DcMotor[] motors;
+
+        public MotorGroup(DcMotor ...motors) {
+            this.motors = motors;
+        }
+
+        public void setPower(double power) {
+            for (DcMotor motor : motors) motor.setPower(power);
+        }
+    }
+
+    protected MotorGroup collector;
 
     protected Turret turret;
     protected Odometry odometry;
@@ -63,8 +74,13 @@ public abstract class Robot extends OpMode {
             motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         }
 
-        collector = hardwareMap.get(DcMotor.class, "collector");
+        DcMotor collector = hardwareMap.get(DcMotor.class, "collector");
+        DcMotor collectorB = hardwareMap.get(DcMotor.class, "collectorB");
+
         collector.setDirection(DcMotor.Direction.REVERSE);
+        collectorB.setDirection(DcMotor.Direction.REVERSE);
+
+        this.collector = new MotorGroup(collector, collectorB);
 
         GoBildaPinpointDriver pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
         pinpoint.setOffsets(-0.06, -0.17, DistanceUnit.METER);

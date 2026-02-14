@@ -35,7 +35,7 @@ public class Turret {
     CRServo yaw;
     DcMotor yawEncoder;
     final double yawDirection;
-    PIDFController yawPIDF = new PIDFController(1.5, 0, 0);
+    PIDFController yawPIDF = new PIDFController(1.32, 0, 0.01);
 
     public double yawOrigin = 0;
     public double yawOffset = 0;
@@ -100,8 +100,8 @@ public class Turret {
 
         static final double EFFICIENCY = 0.4;
         static final double ARTIFACT_LOAD_VELOCITY = 1.0;
-        static final double TARGET_VELOCITY_MULTIPLIER = 1.1;
-        static final double POST_SHOT_TOLERANCE = 1.55;
+        static final double TARGET_VELOCITY_MULTIPLIER = 1.18;
+        static final double POST_SHOT_TOLERANCE = 1.8;
 
         static final double FLYWHEEL_RADIUS = 0.045;
         static final double MAX_FLYWHEEL_VELOCITY = RPM * RATIO / 60.0 * (2 * Math.PI);
