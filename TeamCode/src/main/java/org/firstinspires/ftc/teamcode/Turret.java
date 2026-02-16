@@ -84,13 +84,14 @@ public class Turret {
             double lambda = ((robotPosition.x - wallStart.x) / direction.x + (wallStart.y - robotPosition.y) / direction.y) / (wallDir.x / direction.x - wallDir.y / direction.y);
             vec2 near = new vec2(wallStart.x + lambda * wallDir.x, wallStart.y + lambda * wallDir.y);
 
-            shotNear = new vec2(Math.hypot(near.x - robotPosition.x, near.y - robotPosition.y), BASKET_HEIGHT_MIN - TURRET_HEIGHT);
+            shotNear = new vec2(shotFar.x - BASKET_SIDE_LENGTH, BASKET_HEIGHT_MIN - TURRET_HEIGHT); // FIXME DUMBASS
+            // shotNear = new vec2(Math.hypot(near.x - robotPosition.x, near.y - robotPosition.y), BASKET_HEIGHT_MIN - TURRET_HEIGHT);
             shotMid = new vec2(shotFar.x, shotNear.y);
         }
 
         public double shotVelocity() {
             double t = Math.sqrt((2 * (shotFar.x * Math.tan(MAX_ANGLE) - shotFar.y)) / GRAVITY);
-            return shotFar.x / (t * Math.cos(MAX_ANGLE));
+            return 1.2 * shotFar.x / (t * Math.cos(MAX_ANGLE));
         }
 
         private double shotAngle(double velocity, vec2 shot) {
@@ -119,7 +120,7 @@ public class Turret {
         static final double RATIO_B = 10 / 15.0;
         static final double RPM = 6000;
 
-        static final double EFFICIENCY = 0.46;
+        static final double EFFICIENCY = 0.48;
 
         static final double FLYWHEEL_RADIUS = 0.045;
         static final double MAX_FLYWHEEL_VELOCITY = RPM * RATIO / 60.0 * (2 * Math.PI);
@@ -227,7 +228,7 @@ public class Turret {
             if (angles[0] < MIN_ANGLE) angles[0] = MIN_ANGLE;
             if (angles[1] > MAX_ANGLE) angles[1] = MAX_ANGLE;
 
-            angle = angles[1] - (angles[1] - angles[0]) * 0.2;
+            angle = angles[1] - (angles[1] - angles[0]) * 0.4;
         }
 
         if (telemetry != null) telemetry.addData("target pitch (deg)", Math.toDegrees(angle));
@@ -249,7 +250,7 @@ public class Turret {
     }
 
     public void shoot(Basket basket, double delta) {
-        shoot(shooter.toFlywheelVelocity(basket.shotVelocity() * 1.1), delta);
+        shoot(shooter.toFlywheelVelocity(basket.shotVelocity()), delta);
     }
 
     public void lock(Basket basket, double robotYaw, double delta, Telemetry telemetry) {
@@ -257,6 +258,8 @@ public class Turret {
             double velocity = basket.shotVelocity();
 
             telemetry.addLine("Turret");
+            telemetry.addData("sx (near)", basket.shotNear.x);
+            telemetry.addData("sx (far)", basket.shotFar.x);
             telemetry.addData("target ball velocity (ms^-1)", velocity);
             telemetry.addData("current ball velocity (ms^-1)", shooter.toArtifactVelocity(shooter.getFlywheelVelocity()));
             telemetry.addData("target shooter velocity (rads^-1)", shooter.toFlywheelVelocity(velocity));
@@ -275,17 +278,23 @@ public class Turret {
     }
 
     public boolean willNotHitWall(Basket basket) {
-        double velocity = basket.shotVelocity();
-        double[] angles = basket.shotRange(velocity);
-
-        return !Double.isNaN(angles[0]) && !Double.isNaN(angles[1]) && angles[1] >= angles[0] && angles[0] <= MAX_ANGLE && angles[1] >= MIN_ANGLE;
+        return true; // TODO
     }
+
+    boolean couldShoot = false;
 
     public boolean canShoot(Basket basket) {
         double artifactVelocity = shooter.toArtifactVelocity(shooter.getFlywheelVelocity());
         double[] angles = basket.shotRange(artifactVelocity);
 
-        return !Double.isNaN(angles[0]) && !Double.isNaN(angles[1]) && angles[1] >= angles[0] && angles[0] <= MAX_ANGLE && angles[1] >= MIN_ANGLE;
+        if (!couldShoot) {
+            double targetVelocity = basket.shotVelocity();
+            boolean didRampUp = (targetVelocity - artifactVelocity) < 0.3;
+
+            if (!didRampUp) return false;
+        }
+
+        return couldShoot = !Double.isNaN(angles[0]) && !Double.isNaN(angles[1]) && angles[1] >= angles[0] && angles[0] < MAX_ANGLE * 1.1 && angles[1] > MIN_ANGLE * 0.9;
     }
 
     public void retainStopper() {
