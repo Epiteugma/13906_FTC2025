@@ -18,7 +18,6 @@ public class Turret {
 
     static final double GRAVITY = 9.81;
 
-    static final boolean DISABLE_MULTIPOINT = false;
     static final double BASKET_HEIGHT_MAX = 1.25;
     static final double BASKET_HEIGHT_MIN = 1.05;
     static final double BASKET_SIDE_LENGTH = 0.3;
@@ -69,6 +68,7 @@ public class Turret {
         vec2 direction;
 
         vec2 shotFar;
+        vec2 shotMid;
         vec2 shotNear;
 
         private Basket(vec2 position, vec3 robotPosition) {
@@ -85,13 +85,12 @@ public class Turret {
             vec2 near = new vec2(wallStart.x + lambda * wallDir.x, wallStart.y + lambda * wallDir.y);
 
             shotNear = new vec2(Math.hypot(near.x - robotPosition.x, near.y - robotPosition.y), BASKET_HEIGHT_MIN - TURRET_HEIGHT);
+            shotMid = new vec2(shotFar.x, shotNear.y);
         }
 
         public double shotVelocity() {
-            vec2 shot = DISABLE_MULTIPOINT ? new vec2(shotFar.x, (shotFar.y + shotNear.y) / 2.0) : shotFar;
-
-            double t = Math.sqrt((2 * (shot.x * Math.tan(MAX_ANGLE) - shot.y)) / GRAVITY);
-            return shot.x / (t * Math.cos(MAX_ANGLE));
+            double t = Math.sqrt((2 * (shotFar.x * Math.tan(MAX_ANGLE) - shotFar.y)) / GRAVITY);
+            return shotFar.x / (t * Math.cos(MAX_ANGLE));
         }
 
         private double shotAngle(double velocity, vec2 shot) {
@@ -100,18 +99,17 @@ public class Turret {
             double c = a + shot.y;
 
             double sqrtD = Math.sqrt(b*b - 4 * a * c);
-            double tan = (-b - sqrtD) / 2 * a;
+            double tan = (-b - sqrtD) / (2 * a);
 
             return Math.atan(tan);
         }
 
         public double[] shotRange(double velocity) {
-            vec2 shotCenter = DISABLE_MULTIPOINT ? new vec2(shotFar.x, (shotFar.y + shotNear.y) / 2.0) : null;
+            double min = shotAngle(velocity, shotNear);
+            double mid = shotAngle(velocity, shotMid);
+            double max = shotAngle(velocity, shotFar);
 
-            double min = shotAngle(velocity, DISABLE_MULTIPOINT ? shotCenter : shotNear);
-            double max = DISABLE_MULTIPOINT ? 0 : shotAngle(velocity, shotFar);
-
-            return new double[]{min, DISABLE_MULTIPOINT ? min : max};
+            return new double[]{min, Double.isNaN(max) ? mid : max};
         }
     }
 
@@ -223,8 +221,14 @@ public class Turret {
         double[] angles = basket.shotRange(artifactVelocity);
         double angle;
 
-        if (Double.isNaN(angles[0]) || angles[0] > angles[1]) angle = MAX_ANGLE;
-        else angle = MAX_ANGLE - (MAX_ANGLE - MIN_ANGLE) * 0.2;
+        if (Double.isNaN(angles[0]) || Double.isNaN(angles[1]) || angles[0] > angles[1] || angles[0] > MAX_ANGLE || angles[1] < MIN_ANGLE) {
+            angle = MAX_ANGLE;
+        } else {
+            if (angles[0] < MIN_ANGLE) angles[0] = MIN_ANGLE;
+            if (angles[1] > MAX_ANGLE) angles[1] = MAX_ANGLE;
+
+            angle = angles[1] - (angles[1] - angles[0]) * 0.2;
+        }
 
         if (telemetry != null) telemetry.addData("target pitch (deg)", Math.toDegrees(angle));
 
@@ -245,7 +249,7 @@ public class Turret {
     }
 
     public void shoot(Basket basket, double delta) {
-        shoot(shooter.toFlywheelVelocity(basket.shotVelocity()), delta);
+        shoot(shooter.toFlywheelVelocity(basket.shotVelocity() * 1.1), delta);
     }
 
     public void lock(Basket basket, double robotYaw, double delta, Telemetry telemetry) {
@@ -274,14 +278,14 @@ public class Turret {
         double velocity = basket.shotVelocity();
         double[] angles = basket.shotRange(velocity);
 
-        return !Double.isNaN(angles[0]) && angles[1] >= angles[0];
+        return !Double.isNaN(angles[0]) && !Double.isNaN(angles[1]) && angles[1] >= angles[0] && angles[0] <= MAX_ANGLE && angles[1] >= MIN_ANGLE;
     }
 
     public boolean canShoot(Basket basket) {
         double artifactVelocity = shooter.toArtifactVelocity(shooter.getFlywheelVelocity());
         double[] angles = basket.shotRange(artifactVelocity);
 
-        return !Double.isNaN(angles[0]) && angles[1] >= angles[0];
+        return !Double.isNaN(angles[0]) && !Double.isNaN(angles[1]) && angles[1] >= angles[0] && angles[0] <= MAX_ANGLE && angles[1] >= MIN_ANGLE;
     }
 
     public void retainStopper() {
