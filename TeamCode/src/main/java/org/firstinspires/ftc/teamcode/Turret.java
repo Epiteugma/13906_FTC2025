@@ -81,11 +81,10 @@ public class Turret {
             if (position.x > 0) wallDir.x -= BASKET_SIDE_LENGTH;
             else wallDir.x += BASKET_SIDE_LENGTH;
 
-            double lambda = ((robotPosition.x - wallStart.x) / direction.x + (wallStart.y - robotPosition.y) / direction.y) / (wallDir.x / direction.x - wallDir.y / direction.y);
+            double lambda = ((robotPosition.x - wallStart.x) / direction.x + (wallStart.y - robotPosition.z) / direction.y) / (wallDir.x / direction.x - wallDir.y / direction.y);
             vec2 near = new vec2(wallStart.x + lambda * wallDir.x, wallStart.y + lambda * wallDir.y);
 
-            shotNear = new vec2(shotFar.x - BASKET_SIDE_LENGTH, BASKET_HEIGHT_MIN - TURRET_HEIGHT); // FIXME DUMBASS
-            // shotNear = new vec2(Math.hypot(near.x - robotPosition.x, near.y - robotPosition.y), BASKET_HEIGHT_MIN - TURRET_HEIGHT);
+            shotNear = new vec2(Math.hypot(near.x - robotPosition.x, near.y - robotPosition.z), BASKET_HEIGHT_MIN - TURRET_HEIGHT);
             shotMid = new vec2(shotFar.x, shotNear.y);
         }
 
