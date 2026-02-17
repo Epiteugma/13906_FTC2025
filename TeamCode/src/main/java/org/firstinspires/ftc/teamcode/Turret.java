@@ -20,12 +20,15 @@ public class Turret {
 
     static final double BASKET_HEIGHT_MAX = 1.25;
     static final double BASKET_HEIGHT_MIN = 1.05;
-    static final double BASKET_SIDE_LENGTH = 0.3;
+    static final double BASKET_SIDE_LENGTH = 0.45;
+
+    static final double VELOCITY_BOOST_CLOSE = 1.3;
+    static final double VELOCITY_BOOST_FAR = 1.15;
 
     static final double TURRET_HEIGHT = 0.33;
 
     static final double YAW_RANGE_OFFSET = Math.toRadians(-45);
-    static final double YAW_TPR = 8192 * (114 / 20.0) * 1.02;
+    static final double YAW_TPR = 8192 * (114 / 20.0) * 1.06;
 
     static final vec2 BLUE_BASKET = new vec2(-1.70, 1.70);
     static final vec2 RED_BASKET = new vec2(1.70, 1.70);
@@ -90,7 +93,7 @@ public class Turret {
 
         public double shotVelocity() {
             double t = Math.sqrt((2 * (shotFar.x * Math.tan(MAX_ANGLE) - shotFar.y)) / GRAVITY);
-            return 1.2 * shotFar.x / (t * Math.cos(MAX_ANGLE));
+            return (shotFar.x < 3 ? VELOCITY_BOOST_CLOSE : VELOCITY_BOOST_FAR) * shotFar.x / (t * Math.cos(MAX_ANGLE));
         }
 
         private double shotAngle(double velocity, vec2 shot) {
@@ -221,13 +224,18 @@ public class Turret {
         double[] angles = basket.shotRange(artifactVelocity);
         double angle;
 
+        if (telemetry != null) {
+            telemetry.addData("pitch min (deg)", Math.toDegrees(angles[0]));
+            telemetry.addData("pitch max (deg)", Math.toDegrees(angles[1]));
+        }
+
         if (Double.isNaN(angles[0]) || Double.isNaN(angles[1]) || angles[0] > angles[1] || angles[0] > MAX_ANGLE || angles[1] < MIN_ANGLE) {
             angle = MAX_ANGLE;
         } else {
             if (angles[0] < MIN_ANGLE) angles[0] = MIN_ANGLE;
             if (angles[1] > MAX_ANGLE) angles[1] = MAX_ANGLE;
 
-            angle = angles[1] - (angles[1] - angles[0]) * 0.4;
+            angle = angles[1] - (angles[1] - angles[0]) * 0.3;
         }
 
         if (telemetry != null) telemetry.addData("target pitch (deg)", Math.toDegrees(angle));
@@ -293,7 +301,8 @@ public class Turret {
             if (!didRampUp) return false;
         }
 
-        return couldShoot = !Double.isNaN(angles[0]) && !Double.isNaN(angles[1]) && angles[1] >= angles[0] && angles[0] < MAX_ANGLE * 1.1 && angles[1] > MIN_ANGLE * 0.9;
+        couldShoot = !Double.isNaN(angles[0]) && !Double.isNaN(angles[1]) && angles[1] >= angles[0] && angles[0] < MAX_ANGLE && angles[1] > MIN_ANGLE;
+        return couldShoot;
     }
 
     public void retainStopper() {

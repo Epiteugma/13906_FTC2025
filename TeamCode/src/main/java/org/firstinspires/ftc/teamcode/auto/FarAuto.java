@@ -9,7 +9,7 @@ import dev.zedboy.greatness.PathBuilder;
 import dev.zedboy.greatness.math.vec3;
 
 public class FarAuto extends Robot {
-    public static final double SHOT_CYCLE_TIME = 2;
+    public static final double SHOT_CYCLE_TIME = 1.3;
 
     public static final vec3 START_RED = new vec3(0.4, 0, -1.6);
     public static final vec3 START_BLUE = new vec3(-0.4, 0, -1.6);
