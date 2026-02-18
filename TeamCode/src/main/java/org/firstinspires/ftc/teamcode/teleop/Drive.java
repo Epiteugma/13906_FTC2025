@@ -17,8 +17,7 @@ public class Drive extends Robot {
 
     @Override
     public void start() {
-        timer = System.nanoTime();
-        shootingSwitchTime = System.nanoTime();
+        timer = shootingSwitchTime = System.nanoTime();
 
         SharedState state = SharedState.instance;
 
@@ -79,12 +78,14 @@ public class Drive extends Robot {
             turret.shoot(basket, delta);
             turret.releaseStopper();
         } else {
-            turret.shoot(0.5);
+            turret.shoot(0.7);
             turret.retainStopper();
         }
 
         collector.setPower((System.nanoTime() - shootingSwitchTime) / 1E9 > 0.5 && (!shooting || canShoot) ? 1 : 0);
 
+        telemetry.addData("canShoot", canShoot);
+        telemetry.addLine();
         telemetry.addLine("Odometry");
         telemetry.addData("x (m)", odometry.position.x);
         telemetry.addData("z (m)", odometry.position.z);
