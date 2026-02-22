@@ -96,7 +96,7 @@ public class CloseAuto extends Robot {
 
         follower.update(delta);
 
-        Turret.Basket basket = turret.getBasket(getAlliance(), odometry.position, odometry.velocity);
+        Turret.Basket basket = turret.getBasket(getAlliance(), odometry.position, odometry.rotation.y);
         turret.lock(basket, odometry.rotation.y, delta);
 
         switch (state) {

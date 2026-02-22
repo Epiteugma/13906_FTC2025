@@ -9,29 +9,28 @@ import com.qualcomm.robotcore.hardware.Servo;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 import dev.zedboy.greatness.PIDFController;
+import dev.zedboy.greatness.math.mat;
 import dev.zedboy.greatness.math.vec2;
 import dev.zedboy.greatness.math.vec3;
 
 public class Turret {
-    public static final double MAX_ANGLE = Math.toRadians(45);
+    public static final double MAX_ANGLE = Math.toRadians(90 - 34);
     public static final double MIN_ANGLE = MAX_ANGLE - Math.toRadians(12);
 
     static final double GRAVITY = 9.81;
 
     static final double BASKET_HEIGHT_MAX = 1.2;
     static final double BASKET_HEIGHT_MIN = 1.1;
-    static final double BASKET_SIDE_LENGTH = 0.45;
-
-    static final double VELOCITY_BOOST_CLOSE = 1.25;
-    static final double VELOCITY_BOOST_FAR = 1.15;
+    static final double BASKET_SIDE_LENGTH = 0.56;
 
     static final double TURRET_HEIGHT = 0.33;
+    static final vec2 TURRET_OFFSET = new vec2(0.0, -0.04);
 
     static final double YAW_RANGE_OFFSET = Math.toRadians(-45);
     static final double YAW_TPR = 8192 * (113 / 20.0);
 
-    static final vec2 BLUE_BASKET = new vec2(-1.70, 1.70);
-    static final vec2 RED_BASKET = new vec2(1.70, 1.70);
+    static final vec2 BLUE_BASKET = new vec2(-1.8, 1.8);
+    static final vec2 RED_BASKET = new vec2(1.8, 1.8);
 
     public Shooter shooter;
 
@@ -71,11 +70,13 @@ public class Turret {
         vec2 direction;
 
         vec2 shotFar;
-        vec2 shotMid;
         vec2 shotNear;
 
-        private Basket(vec2 position, vec3 robotPosition) {
-            direction = new vec2(position.x - robotPosition.x, position.y - robotPosition.z);
+        private Basket(vec2 position, vec3 robotPosition, double robotYaw) {
+            vec2 turretOffset = new vec2(TURRET_OFFSET.x, TURRET_OFFSET.y).rotate(robotYaw);
+            vec2 turretPosition = new vec2(robotPosition.x + turretOffset.x, robotPosition.z + turretOffset.y);
+
+            direction = new vec2(position.x - turretPosition.x, position.y - turretPosition.y);
             shotFar = new vec2(Math.hypot(direction.x, direction.y), BASKET_HEIGHT_MAX - TURRET_HEIGHT);
 
             vec2 wallStart = new vec2(position.x, position.y - BASKET_SIDE_LENGTH);
@@ -84,16 +85,16 @@ public class Turret {
             if (position.x > 0) wallDir.x -= BASKET_SIDE_LENGTH;
             else wallDir.x += BASKET_SIDE_LENGTH;
 
-            double lambda = ((robotPosition.x - wallStart.x) / direction.x + (wallStart.y - robotPosition.z) / direction.y) / (wallDir.x / direction.x - wallDir.y / direction.y);
-            vec2 near = new vec2(wallStart.x + lambda * wallDir.x, wallStart.y + lambda * wallDir.y);
+            vec2 wallI = ZoneManager.intersectLines(wallStart, wallDir, turretPosition, direction);
+            vec2 near = new vec2(wallStart.x + wallI.x * wallDir.x, wallStart.y + wallI.x * wallDir.y);
 
-            shotNear = new vec2(Math.hypot(near.x - robotPosition.x, near.y - robotPosition.z), BASKET_HEIGHT_MIN - TURRET_HEIGHT);
-            shotMid = new vec2(shotFar.x, shotNear.y);
+            shotNear = new vec2(Math.hypot(near.x - turretPosition.x, near.y - turretPosition.y), BASKET_HEIGHT_MIN - TURRET_HEIGHT);
         }
 
         public double shotVelocity() {
-            double t = Math.sqrt((2 * (shotFar.x * Math.tan(MAX_ANGLE) - shotFar.y)) / GRAVITY);
-            return (shotFar.x < 2.6 ? VELOCITY_BOOST_CLOSE : VELOCITY_BOOST_FAR) * shotFar.x / (t * Math.cos(MAX_ANGLE));
+            double theta = MIN_ANGLE;
+            double t = Math.sqrt((2 * (shotFar.x * Math.tan(theta) - shotFar.y)) / GRAVITY);
+            return shotFar.x / (t * Math.cos(theta));
         }
 
         private double shotAngle(double velocity, vec2 shot) {
@@ -109,10 +110,9 @@ public class Turret {
 
         public double[] shotRange(double velocity) {
             double min = shotAngle(velocity, shotNear);
-            double mid = shotAngle(velocity, shotMid);
             double max = shotAngle(velocity, shotFar);
 
-            return new double[]{min, Double.isNaN(max) ? mid : max};
+            return new double[]{min, max};
         }
     }
 
@@ -122,7 +122,7 @@ public class Turret {
         static final double RATIO_B = 10 / 15.0;
         static final double RPM = 6000;
 
-        static final double EFFICIENCY = 0.46;
+        static final double EFFICIENCY = 0.47;
 
         static final double FLYWHEEL_RADIUS = 0.045;
         static final double MAX_FLYWHEEL_VELOCITY = RPM * RATIO / 60.0 * (2 * Math.PI);
@@ -177,14 +177,9 @@ public class Turret {
         }
     }
 
-    public Basket getBasket(Robot.Alliance alliance, vec3 robotPosition, vec3 robotVelocity) {
+    public Basket getBasket(Robot.Alliance alliance, vec3 robotPosition, double robotYaw) {
         if (alliance == Robot.Alliance.UNKNOWN) return null;
-
-        return new Basket(alliance == Robot.Alliance.RED ? RED_BASKET : BLUE_BASKET, new vec3(
-                robotPosition.x, // + robotVelocity.x * 0.2,
-                robotPosition.y, // + robotVelocity.y * 0.2,
-                robotPosition.z  // + robotVelocity.z * 0.2
-        ));
+        return new Basket(alliance == Robot.Alliance.RED ? RED_BASKET : BLUE_BASKET, robotPosition, robotYaw);
     }
 
     public double currentYaw() {
@@ -229,13 +224,11 @@ public class Turret {
             telemetry.addData("pitch max (deg)", Math.toDegrees(angles[1]));
         }
 
-        if (Double.isNaN(angles[0]) || Double.isNaN(angles[1]) || angles[0] > angles[1] || angles[0] > MAX_ANGLE || angles[1] < MIN_ANGLE) {
-            angle = MAX_ANGLE;
+        if (Double.isNaN(angles[0]) || angles[0] > MAX_ANGLE) {
+            angle = MIN_ANGLE;
         } else {
             if (angles[0] < MIN_ANGLE) angles[0] = MIN_ANGLE;
-            if (angles[1] > MAX_ANGLE) angles[1] = MAX_ANGLE;
-
-            angle = angles[0]; // angles[1] - (angles[1] - angles[0]) * 0.3;
+            angle = angles[0];
         }
 
         if (telemetry != null) telemetry.addData("target pitch (deg)", Math.toDegrees(angle));
@@ -301,7 +294,7 @@ public class Turret {
             if (!didRampUp) return false;
         }
 
-        couldShoot = !Double.isNaN(angles[0]) && !Double.isNaN(angles[1]) && angles[1] >= angles[0] && angles[0] < MAX_ANGLE && angles[1] > MIN_ANGLE;
+        couldShoot = !Double.isNaN(angles[0]) && (Double.isNaN(angles[1]) || angles[1] >= angles[0]) && angles[0] < MAX_ANGLE;
         return couldShoot;
     }
 

@@ -6,12 +6,13 @@ import org.firstinspires.ftc.teamcode.Turret;
 import org.firstinspires.ftc.teamcode.ZoneManager;
 import org.firstinspires.ftc.teamcode.auto.FarAuto;
 
+import dev.zedboy.greatness.math.vec2;
+import dev.zedboy.greatness.math.vec3;
+
 public class Drive extends Robot {
     boolean shooting = false;
     boolean wasShooting = false;
     long shootingSwitchTime = 0;
-
-    boolean collecting = false;
 
     long timer;
 
@@ -50,7 +51,7 @@ public class Drive extends Robot {
         double x = gamepad1.left_stick_x;
         double w = -gamepad1.right_stick_x;
 
-        Turret.Basket basket = turret.getBasket(getAlliance(), odometry.position, odometry.velocity);
+        Turret.Basket basket = turret.getBasket(getAlliance(), odometry.position, odometry.rotation.y);
 
         shooting = turret.willNotHitWall(basket) && (
                 isInZone(ZoneManager.SHOOTING_ZONE_CLOSE) || isInZone(ZoneManager.SHOOTING_ZONE_FAR)
@@ -59,28 +60,30 @@ public class Drive extends Robot {
         if (shooting != wasShooting) shootingSwitchTime = System.nanoTime();
         wasShooting = shooting;
 
-        if (gamepad1.right_bumper) collecting = true;
-        if (gamepad1.left_bumper) collecting = false;
-
-        turret.yawOffset += ((gamepad1.x ? 1 : 0) - (gamepad1.b ? 1 : 0)) * delta;
-        if (gamepad1.back) turret.yawOffset = 0;
+        turret.yawOffset += -gamepad2.left_stick_x * delta;
+        if (gamepad2.back) turret.yawOffset = 0;
 
         frontLeft.setPower(y + x - w);
         frontRight.setPower(y - x + w);
         backLeft.setPower(y - x - w);
         backRight.setPower(y + x + w);
 
+        vec2 rayOrigin = new vec2(odometry.position.x, odometry.position.z);
+        vec2 rayDirection = new vec2(odometry.velocity.x, odometry.velocity.z);
+
+        double rayZoneClose = ZoneManager.SHOOTING_ZONE_CLOSE.raycast(rayOrigin, rayDirection)[0];
+        double rayZoneFar = ZoneManager.SHOOTING_ZONE_FAR.raycast(rayOrigin, rayDirection)[0];
+
+        boolean drivingToZone = Math.hypot(odometry.velocity.x, odometry.velocity.z) > 0.1 && (rayZoneClose > 0 || rayZoneFar > 0);
         boolean canShoot = turret.canShoot(basket) && turret.isYawLocked(basket, odometry.rotation.y);
 
         turret.lock(basket, odometry.rotation.y, delta, telemetry);
 
-        if (shooting) {
-            turret.shoot(basket, delta);
-            turret.releaseStopper();
-        } else {
-            turret.shoot(0.7);
-            turret.retainStopper();
-        }
+        if (shooting) turret.releaseStopper();
+        else turret.retainStopper();
+
+        if (shooting || drivingToZone) turret.shoot(basket, delta);
+        else turret.shoot(0);
 
         collector.setPower((System.nanoTime() - shootingSwitchTime) / 1E9 > 0.5 && (!shooting || canShoot) ? 1 : 0);
 
