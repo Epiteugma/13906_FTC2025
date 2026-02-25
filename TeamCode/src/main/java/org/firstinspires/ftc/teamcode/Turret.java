@@ -91,13 +91,20 @@ public class Turret {
             shotNear = new vec2(Math.hypot(near.x - turretPosition.x, near.y - turretPosition.y), BASKET_HEIGHT_MIN - TURRET_HEIGHT);
         }
 
-        public double shotVelocity() {
-            double theta = MIN_ANGLE;
-            double t = Math.sqrt((2 * (shotFar.x * Math.tan(theta) - shotFar.y)) / GRAVITY);
-            return shotFar.x / (t * Math.cos(theta));
+        double shotVelocity(vec2 shot) {
+            double t = Math.sqrt((2 * (shot.x * Math.tan(MAX_ANGLE) - shot.y)) / GRAVITY);
+            return shot.x / (t * Math.cos(MAX_ANGLE));
         }
 
-        private double shotAngle(double velocity, vec2 shot) {
+        public double maxShotVelocity() {
+            return shotVelocity(shotFar);
+        }
+
+        public double minShotVelocity() {
+            return shotVelocity(shotNear);
+        }
+
+        double shotAngle(double velocity, vec2 shot) {
             double a = (shot.x*shot.x * GRAVITY) / (2 * velocity*velocity);
             double b = -shot.x;
             double c = a + shot.y;
@@ -108,11 +115,8 @@ public class Turret {
             return Math.atan(tan);
         }
 
-        public double[] shotRange(double velocity) {
-            double min = shotAngle(velocity, shotNear);
-            double max = shotAngle(velocity, shotFar);
-
-            return new double[]{min, max};
+        public double shotAngle(double velocity) {
+            return shotAngle(velocity, shotFar);
         }
     }
 
@@ -126,6 +130,7 @@ public class Turret {
 
         static final double FLYWHEEL_RADIUS = 0.045;
         static final double MAX_FLYWHEEL_VELOCITY = RPM * RATIO / 60.0 * (2 * Math.PI);
+        static final double SHOT_VELOCITY_LOSS = 35; // rads^-1
 
         PIDFController pidf = new PIDFController(0.1, 0, 0, 1 / MAX_FLYWHEEL_VELOCITY);
 
@@ -155,11 +160,11 @@ public class Turret {
         }
 
         public double toFlywheelVelocity(double velocity) {
-            return velocity / FLYWHEEL_RADIUS / EFFICIENCY;
+            return velocity / FLYWHEEL_RADIUS / EFFICIENCY + SHOT_VELOCITY_LOSS;
         }
 
         public double toArtifactVelocity(double velocity) {
-            return EFFICIENCY * velocity * FLYWHEEL_RADIUS;
+            return EFFICIENCY * velocity * FLYWHEEL_RADIUS - SHOT_VELOCITY_LOSS;
         }
 
         void setPower(double power) {
@@ -216,20 +221,10 @@ public class Turret {
 
     public void lockPitch(Basket basket, double flywheelVelocity, Telemetry telemetry) {
         double artifactVelocity = shooter.toArtifactVelocity(flywheelVelocity);
-        double[] angles = basket.shotRange(artifactVelocity);
-        double angle;
+        double angle = basket.shotAngle(artifactVelocity);
 
-        if (telemetry != null) {
-            telemetry.addData("pitch min (deg)", Math.toDegrees(angles[0]));
-            telemetry.addData("pitch max (deg)", Math.toDegrees(angles[1]));
-        }
-
-        if (Double.isNaN(angles[0]) || angles[0] > MAX_ANGLE) {
-            angle = MIN_ANGLE;
-        } else {
-            if (angles[0] < MIN_ANGLE) angles[0] = MIN_ANGLE;
-            angle = angles[0];
-        }
+        if (Double.isNaN(angle) || angle > MAX_ANGLE) angle = MAX_ANGLE;
+        else if (angle < MIN_ANGLE) angle = MIN_ANGLE;
 
         if (telemetry != null) telemetry.addData("target pitch (deg)", Math.toDegrees(angle));
 
@@ -250,12 +245,12 @@ public class Turret {
     }
 
     public void shoot(Basket basket, double delta) {
-        shoot(shooter.toFlywheelVelocity(basket.shotVelocity()), delta);
+        shoot(shooter.toFlywheelVelocity(basket.maxShotVelocity()), delta);
     }
 
     public void lock(Basket basket, double robotYaw, double delta, Telemetry telemetry) {
         if (telemetry != null) {
-            double velocity = basket.shotVelocity();
+            double velocity = basket.maxShotVelocity();
 
             telemetry.addLine("Turret");
             telemetry.addData("sx (near)", basket.shotNear.x);
@@ -285,16 +280,15 @@ public class Turret {
 
     public boolean canShoot(Basket basket) {
         double artifactVelocity = shooter.toArtifactVelocity(shooter.getFlywheelVelocity());
-        double[] angles = basket.shotRange(artifactVelocity);
 
         if (!couldShoot) {
-            double targetVelocity = basket.shotVelocity();
+            double targetVelocity = basket.maxShotVelocity();
             boolean didRampUp = (targetVelocity - artifactVelocity) < 0.3;
 
             if (!didRampUp) return false;
         }
 
-        couldShoot = !Double.isNaN(angles[0]) && (Double.isNaN(angles[1]) || angles[1] >= angles[0]) && angles[0] < MAX_ANGLE;
+        couldShoot = artifactVelocity >= basket.minShotVelocity();
         return couldShoot;
     }
 
