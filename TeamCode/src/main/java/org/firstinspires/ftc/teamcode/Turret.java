@@ -24,7 +24,7 @@ public class Turret {
     static final double BASKET_SIDE_LENGTH = 0.56;
 
     static final double TURRET_HEIGHT = 0.33;
-    static final vec2 TURRET_OFFSET = new vec2(0.0, -0.025);
+    static final vec2 TURRET_OFFSET = new vec2(0.0, -0.075);
 
     static final double YAW_RANGE_OFFSET = Math.toRadians(-45);
     static final double YAW_TPR = 8192 * (113 / 20.0);
