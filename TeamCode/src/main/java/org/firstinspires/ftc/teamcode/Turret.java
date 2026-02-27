@@ -24,7 +24,7 @@ public class Turret {
     static final double BASKET_SIDE_LENGTH = 0.56;
 
     static final double TURRET_HEIGHT = 0.33;
-    static final vec2 TURRET_OFFSET = new vec2(0.0, -0.075);
+    static final vec2 TURRET_OFFSET = new vec2(0.0, -0.06);
 
     static final double YAW_RANGE_OFFSET = Math.toRadians(-45);
     static final double YAW_TPR = 8192 * (113 / 20.0);
@@ -110,7 +110,7 @@ public class Turret {
             double c = a + shot.y;
 
             double sqrtD = Math.sqrt(b*b - 4 * a * c);
-            double tan = (-b - sqrtD) / (2 * a);
+            double tan = (-b + sqrtD) / (2 * a);
 
             return Math.atan(tan);
         }
@@ -272,7 +272,10 @@ public class Turret {
     }
 
     public boolean willNotHitWall(Basket basket) {
-        return shooter.toFlywheelVelocity(basket.maxShotVelocity()) <= Shooter.MAX_FLYWHEEL_VELOCITY;
+        double minVelocity = basket.minShotVelocity();
+        double maxVelocity = basket.maxShotVelocity();
+
+        return !Double.isNaN(minVelocity) && !Double.isNaN(maxVelocity) && minVelocity < maxVelocity && shooter.toFlywheelVelocity(maxVelocity) <= Shooter.MAX_FLYWHEEL_VELOCITY;
     }
 
     boolean couldShoot = false;
