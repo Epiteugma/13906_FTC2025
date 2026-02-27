@@ -13,8 +13,8 @@ public class CloseAuto extends Robot {
     public static final vec3 START_RED = new vec3(0.82, 0, 1.6);
     public static final vec3 START_BLUE = new vec3(-0.82, 0, 1.6);
 
-    public static final vec3 SHOOT_RED = new vec3(0.3, 0, 0.3);
-    public static final vec3 SHOOT_BLUE = new vec3(-0.3, 0, 0.3);
+    public static final vec3 SHOOT_RED = new vec3(0.5, 0, 0.5);
+    public static final vec3 SHOOT_BLUE = new vec3(-0.5, 0, 0.5);
 
     public static final vec3 GATE_RED = new vec3(1.45, 0, 0);
     public static final vec3 GATE_BLUE = new vec3(-1.45, 0, 0);

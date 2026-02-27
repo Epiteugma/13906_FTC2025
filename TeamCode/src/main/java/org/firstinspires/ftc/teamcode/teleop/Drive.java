@@ -6,13 +6,20 @@ import org.firstinspires.ftc.teamcode.Turret;
 import org.firstinspires.ftc.teamcode.ZoneManager;
 import org.firstinspires.ftc.teamcode.auto.FarAuto;
 
+import dev.zedboy.greatness.PathBuilder;
 import dev.zedboy.greatness.math.vec2;
 import dev.zedboy.greatness.math.vec3;
 
 public class Drive extends Robot {
+    static final vec3 PARK_BLUE = new vec3(0.8, 0, -1);
+    static final vec3 PARK_RED = new vec3(-0.8, 0, -1);
+
     boolean shooting = false;
     boolean wasShooting = false;
     long shootingSwitchTime = 0;
+
+    boolean parking = false;
+    boolean wasParking = false;
 
     long timer;
 
@@ -57,16 +64,36 @@ public class Drive extends Robot {
                 isInZone(ZoneManager.SHOOTING_ZONE_CLOSE) || isInZone(ZoneManager.SHOOTING_ZONE_FAR)
         );
 
+        parking = gamepad1.a;
+
+        if (parking && !wasParking) {
+            follower.setPath(
+                    new PathBuilder()
+                            .startAt(odometry.position)
+                            .startHeading(odometry.rotation)
+                            .lineTo(getAlliance() == Alliance.RED ? PARK_RED : PARK_BLUE)
+                            .turnTo(0, 0, 0)
+                            .build()
+            );
+        }
+
+        wasParking = parking;
+
         if (shooting != wasShooting) shootingSwitchTime = System.nanoTime();
         wasShooting = shooting;
 
         turret.yawOffset += -gamepad2.left_stick_x * delta;
         if (gamepad2.back) turret.yawOffset = 0;
 
-        frontLeft.setPower(y + x - w);
-        frontRight.setPower(y - x + w);
-        backLeft.setPower(y - x - w);
-        backRight.setPower(y + x + w);
+        if (!parking) {
+            frontLeft.setPower(y + x - w);
+            frontRight.setPower(y - x + w);
+            backLeft.setPower(y - x - w);
+            backRight.setPower(y + x + w);
+        } else {
+            follower.update(delta);
+            if (follower.done()) follower.setPath(null);
+        }
 
         vec2 rayOrigin = new vec2(odometry.position.x, odometry.position.z);
         vec2 rayDirection = new vec2(odometry.velocity.x, odometry.velocity.z);
@@ -82,7 +109,7 @@ public class Drive extends Robot {
         if (shooting) turret.releaseStopper();
         else turret.retainStopper();
 
-        if (shooting || drivingToZone) turret.shoot(basket, delta);
+        if (!parking && (shooting || drivingToZone)) turret.shoot(basket, delta);
         else turret.shoot(0);
 
         collector.setPower((System.nanoTime() - shootingSwitchTime) / 1E9 > 0.5 && (!shooting || canShoot) ? 1 : 0);

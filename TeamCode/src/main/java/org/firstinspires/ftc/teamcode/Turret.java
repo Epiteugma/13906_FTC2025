@@ -24,7 +24,7 @@ public class Turret {
     static final double BASKET_SIDE_LENGTH = 0.56;
 
     static final double TURRET_HEIGHT = 0.33;
-    static final vec2 TURRET_OFFSET = new vec2(0.0, -0.04);
+    static final vec2 TURRET_OFFSET = new vec2(0.0, -0.025);
 
     static final double YAW_RANGE_OFFSET = Math.toRadians(-45);
     static final double YAW_TPR = 8192 * (113 / 20.0);
@@ -130,7 +130,6 @@ public class Turret {
 
         static final double FLYWHEEL_RADIUS = 0.045;
         static final double MAX_FLYWHEEL_VELOCITY = RPM * RATIO / 60.0 * (2 * Math.PI);
-        static final double SHOT_VELOCITY_LOSS = 35; // rads^-1
 
         PIDFController pidf = new PIDFController(0.1, 0, 0, 1 / MAX_FLYWHEEL_VELOCITY);
 
@@ -160,11 +159,11 @@ public class Turret {
         }
 
         public double toFlywheelVelocity(double velocity) {
-            return velocity / FLYWHEEL_RADIUS / EFFICIENCY + SHOT_VELOCITY_LOSS;
+            return (velocity + 0.35) / FLYWHEEL_RADIUS / EFFICIENCY;
         }
 
         public double toArtifactVelocity(double velocity) {
-            return EFFICIENCY * velocity * FLYWHEEL_RADIUS - SHOT_VELOCITY_LOSS;
+            return EFFICIENCY * velocity * FLYWHEEL_RADIUS - 0.35;
         }
 
         void setPower(double power) {
@@ -273,7 +272,7 @@ public class Turret {
     }
 
     public boolean willNotHitWall(Basket basket) {
-        return true; // TODO
+        return shooter.toFlywheelVelocity(basket.maxShotVelocity()) <= Shooter.MAX_FLYWHEEL_VELOCITY;
     }
 
     boolean couldShoot = false;
@@ -288,7 +287,7 @@ public class Turret {
             if (!didRampUp) return false;
         }
 
-        couldShoot = artifactVelocity >= basket.minShotVelocity();
+        couldShoot = artifactVelocity + 0.4 >= basket.minShotVelocity();
         return couldShoot;
     }
 
