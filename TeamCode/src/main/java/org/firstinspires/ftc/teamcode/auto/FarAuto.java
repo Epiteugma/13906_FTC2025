@@ -63,8 +63,8 @@ public class FarAuto extends Robot {
         double delta = (System.nanoTime() - timer) / 1E9;
         timer = System.nanoTime();
 
-        Turret.Basket basket = turret.getBasket(getAlliance(), odometry.position, odometry.rotation.y);
-        turret.lock(basket, odometry.rotation.y, delta);
+        Turret.Basket basket = turret.getBasket(getAlliance(), odometry.position, odometry.velocity, odometry.rotation.y, odometry.angularVel.y);
+        turret.lock(basket, odometry.rotation.y, odometry.angularVel.y, delta);
 
         switch (state) {
             case Collecting:

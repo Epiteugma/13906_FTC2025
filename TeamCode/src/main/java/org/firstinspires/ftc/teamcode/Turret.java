@@ -32,6 +32,9 @@ public class Turret {
     static final vec2 BLUE_BASKET = new vec2(-1.8, 1.8);
     static final vec2 RED_BASKET = new vec2(1.8, 1.8);
 
+    static final double PREDICTION_FACTOR = 0;
+    static final double PREDICTION_FACTOR_ANGULAR = 0;
+
     public Shooter shooter;
 
     Servo stopper;
@@ -116,7 +119,7 @@ public class Turret {
         }
 
         public double shotAngle(double velocity) {
-            return shotAngle(velocity, shotFar);
+            return shotAngle(velocity, shotNear);
         }
     }
 
@@ -181,9 +184,13 @@ public class Turret {
         }
     }
 
-    public Basket getBasket(Robot.Alliance alliance, vec3 robotPosition, double robotYaw) {
+    public Basket getBasket(Robot.Alliance alliance, vec3 robotPosition, vec3 robotVelocity, double robotYaw, double robotAngularVel) {
         if (alliance == Robot.Alliance.UNKNOWN) return null;
-        return new Basket(alliance == Robot.Alliance.RED ? RED_BASKET : BLUE_BASKET, robotPosition, robotYaw);
+        return new Basket(alliance == Robot.Alliance.RED ? RED_BASKET : BLUE_BASKET, new vec3(
+                robotPosition.x + robotVelocity.x * PREDICTION_FACTOR,
+                robotPosition.y + robotVelocity.y * PREDICTION_FACTOR,
+                robotPosition.z + robotVelocity.z * PREDICTION_FACTOR
+        ), robotYaw + robotAngularVel * PREDICTION_FACTOR_ANGULAR);
     }
 
     public double currentYaw() {
@@ -197,9 +204,9 @@ public class Turret {
         return Math.abs(yawError) < Math.toRadians(5);
     }
 
-    public void lockYaw(Basket basket, double robotYaw, double delta, Telemetry telemetry) {
+    public void lockYaw(Basket basket, double robotYaw, double robotAngularVel, double delta, Telemetry telemetry) {
         double currentYaw = currentYaw();
-        double targetYaw = Math.atan2(basket.direction.y, basket.direction.x) - Math.PI / 2 - robotYaw + yawOffset;
+        double targetYaw = Math.atan2(basket.direction.y, basket.direction.x) - Math.PI / 2 - (robotYaw + robotAngularVel * PREDICTION_FACTOR_ANGULAR) + yawOffset;
 
         targetYaw = Math.atan2(
                 Math.sin(targetYaw - YAW_RANGE_OFFSET),
@@ -214,8 +221,8 @@ public class Turret {
         }
     }
 
-    public void lockYaw(Basket basket, double robotYaw, double delta) {
-        lockYaw(basket, robotYaw, delta, null);
+    public void lockYaw(Basket basket, double robotYaw, double robotAngularVel, double delta) {
+        lockYaw(basket, robotYaw, robotAngularVel, delta, null);
     }
 
     public void lockPitch(Basket basket, double flywheelVelocity, Telemetry telemetry) {
@@ -247,28 +254,31 @@ public class Turret {
         shoot(shooter.toFlywheelVelocity(basket.maxShotVelocity()), delta);
     }
 
-    public void lock(Basket basket, double robotYaw, double delta, Telemetry telemetry) {
+    public void lock(Basket basket, double robotYaw, double robotAngularVel, double delta, Telemetry telemetry) {
         if (telemetry != null) {
-            double velocity = basket.maxShotVelocity();
+            double minVelocity = basket.minShotVelocity();
+            double maxVelocity = basket.maxShotVelocity();
 
             telemetry.addLine("Turret");
             telemetry.addData("sx (near)", basket.shotNear.x);
             telemetry.addData("sx (far)", basket.shotFar.x);
-            telemetry.addData("target ball velocity (ms^-1)", velocity);
+            telemetry.addData("target min ball velocity (ms^-1)", minVelocity);
+            telemetry.addData("target max ball velocity (ms^-1)", maxVelocity);
             telemetry.addData("current ball velocity (ms^-1)", shooter.toArtifactVelocity(shooter.getFlywheelVelocity()));
-            telemetry.addData("target shooter velocity (rads^-1)", shooter.toFlywheelVelocity(velocity));
+            telemetry.addData("target min shooter velocity (rads^-1)", shooter.toFlywheelVelocity(minVelocity));
+            telemetry.addData("target max shooter velocity (rads^-1)", shooter.toFlywheelVelocity(maxVelocity));
             telemetry.addData("current shooter velocity (rads^-1)", shooter.getFlywheelVelocity());
             telemetry.addData("current shooter velocity (rpm)", shooter.getFlywheelRPM());
         }
 
-        lockYaw(basket, robotYaw, delta, telemetry);
+        lockYaw(basket, robotYaw, robotAngularVel, delta, telemetry);
         lockPitch(basket, shooter.getFlywheelVelocity(), telemetry);
 
         if (telemetry != null) telemetry.addLine();
     }
 
-    public void lock(Basket basket, double robotYaw, double delta) {
-        lock(basket, robotYaw, delta, null);
+    public void lock(Basket basket, double robotYaw, double robotAngularVel, double delta) {
+        lock(basket, robotYaw, robotAngularVel, delta, null);
     }
 
     public boolean willNotHitWall(Basket basket) {

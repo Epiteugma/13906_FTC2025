@@ -3,8 +3,10 @@ package org.firstinspires.ftc.teamcode.auto;
 import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.SharedState;
 import org.firstinspires.ftc.teamcode.Turret;
+import org.firstinspires.ftc.teamcode.ZoneManager;
 
 import dev.zedboy.greatness.PathBuilder;
+import dev.zedboy.greatness.math.vec2;
 import dev.zedboy.greatness.math.vec3;
 
 public class CloseAuto extends Robot {
@@ -96,8 +98,8 @@ public class CloseAuto extends Robot {
 
         follower.update(delta);
 
-        Turret.Basket basket = turret.getBasket(getAlliance(), odometry.position, odometry.rotation.y);
-        turret.lock(basket, odometry.rotation.y, delta);
+        Turret.Basket basket = turret.getBasket(getAlliance(), odometry.position, odometry.velocity, odometry.rotation.y, odometry.angularVel.y);
+        turret.lock(basket, odometry.rotation.y, odometry.angularVel.y, delta);
 
         switch (state) {
             case Shooting:

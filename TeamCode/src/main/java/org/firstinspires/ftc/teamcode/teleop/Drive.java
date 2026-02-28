@@ -58,13 +58,16 @@ public class Drive extends Robot {
         double x = gamepad1.left_stick_x;
         double w = -gamepad1.right_stick_x;
 
-        Turret.Basket basket = turret.getBasket(getAlliance(), odometry.position, odometry.rotation.y);
+        Turret.Basket basket = turret.getBasket(getAlliance(), odometry.position, odometry.velocity, odometry.rotation.y, odometry.angularVel.y);
 
         shooting = turret.willNotHitWall(basket) && (
                 isInZone(ZoneManager.SHOOTING_ZONE_CLOSE) || isInZone(ZoneManager.SHOOTING_ZONE_FAR)
-        );
+        ) && gamepad1.right_trigger < 0.2;
 
-        parking = gamepad1.a;
+        if (shooting != wasShooting) shootingSwitchTime = System.nanoTime();
+        wasShooting = shooting;
+
+        parking = gamepad1.left_trigger > 0.2;
 
         if (parking && !wasParking) {
             follower.setPath(
@@ -78,9 +81,6 @@ public class Drive extends Robot {
         }
 
         wasParking = parking;
-
-        if (shooting != wasShooting) shootingSwitchTime = System.nanoTime();
-        wasShooting = shooting;
 
         turret.yawOffset += -gamepad2.left_stick_x * delta;
         if (gamepad2.back) turret.yawOffset = 0;
@@ -96,7 +96,7 @@ public class Drive extends Robot {
         }
 
         vec2 rayOrigin = new vec2(odometry.position.x, odometry.position.z);
-        vec2 rayDirection = new vec2(odometry.velocity.x, odometry.velocity.z);
+        vec2 rayDirection = new vec2(odometry.velocity.x, odometry.velocity.z).rotate(odometry.rotation.y);
 
         double rayZoneClose = ZoneManager.SHOOTING_ZONE_CLOSE.raycast(rayOrigin, rayDirection)[0];
         double rayZoneFar = ZoneManager.SHOOTING_ZONE_FAR.raycast(rayOrigin, rayDirection)[0];
@@ -104,7 +104,7 @@ public class Drive extends Robot {
         boolean drivingToZone = Math.hypot(odometry.velocity.x, odometry.velocity.z) > 0.1 && (rayZoneClose > 0 || rayZoneFar > 0);
         boolean canShoot = turret.canShoot(basket) && turret.isYawLocked(basket, odometry.rotation.y);
 
-        turret.lock(basket, odometry.rotation.y, delta, telemetry);
+        turret.lock(basket, odometry.rotation.y, odometry.angularVel.y, delta, telemetry);
 
         if (shooting) turret.releaseStopper();
         else turret.retainStopper();
