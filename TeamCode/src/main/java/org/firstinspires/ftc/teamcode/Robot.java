@@ -83,7 +83,7 @@ public abstract class Robot extends OpMode {
         this.collector = new MotorGroup(collector, collectorB);
 
         GoBildaPinpointDriver pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
-        pinpoint.setOffsets(-0.06, -0.17, DistanceUnit.METER);
+        pinpoint.setOffsets(-0.06, -0.175, DistanceUnit.METER);
 
         odometry = new GoBildaOdometry(pinpoint);
 

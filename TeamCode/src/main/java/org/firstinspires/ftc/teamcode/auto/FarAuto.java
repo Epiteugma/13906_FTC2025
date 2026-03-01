@@ -9,7 +9,7 @@ import dev.zedboy.greatness.PathBuilder;
 import dev.zedboy.greatness.math.vec3;
 
 public class FarAuto extends Robot {
-    public static final double SHOT_CYCLE_TIME = 1.3;
+    public static final double SHOT_CYCLE_TIME = 2.7;
 
     public static final vec3 START_RED = new vec3(0.4, 0, -1.6);
     public static final vec3 START_BLUE = new vec3(-0.4, 0, -1.6);
@@ -63,7 +63,7 @@ public class FarAuto extends Robot {
         double delta = (System.nanoTime() - timer) / 1E9;
         timer = System.nanoTime();
 
-        Turret.Basket basket = turret.getBasket(getAlliance(), odometry.position, odometry.velocity, odometry.rotation.y, odometry.angularVel.y);
+        Turret.Basket basket = turret.getBasket(getAlliance(), odometry.position, odometry.velocity);
         turret.lock(basket, odometry.rotation.y, odometry.angularVel.y, delta);
 
         switch (state) {

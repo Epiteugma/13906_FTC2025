@@ -10,10 +10,10 @@ import dev.zedboy.greatness.math.vec2;
 import dev.zedboy.greatness.math.vec3;
 
 public class CloseAuto extends Robot {
-    public static final double SHOT_CYCLE_TIME = 0.7;
+    public static final double SHOT_CYCLE_TIME = 1.5;
 
-    public static final vec3 START_RED = new vec3(0.82, 0, 1.6);
-    public static final vec3 START_BLUE = new vec3(-0.82, 0, 1.6);
+    public static final vec3 START_RED = new vec3(0.95, 0, 1.55);
+    public static final vec3 START_BLUE = new vec3(-0.95, 0, 1.55);
 
     public static final vec3 SHOOT_RED = new vec3(0.5, 0, 0.5);
     public static final vec3 SHOOT_BLUE = new vec3(-0.5, 0, 0.5);
@@ -47,6 +47,8 @@ public class CloseAuto extends Robot {
     long timer;
     long shotTimer;
     long gateTimer;
+    long shootingSwitchTime;
+
     int rowsCollected = 0;
     boolean startedShooting = false;
 
@@ -77,13 +79,16 @@ public class CloseAuto extends Robot {
                 break;
         }
 
-        odometry.setPosition(getAlliance() == Alliance.RED ? START_RED : START_BLUE);
+        odometry.setPosition(
+                getAlliance() == Alliance.RED ? START_RED : START_BLUE,
+                new vec3(0, Math.toRadians(getAlliance() == Alliance.RED ? -90 : 90), 0)
+        );
 
         follower.setPath(
                 new PathBuilder()
                         .startAt(getAlliance() == Alliance.RED ? START_RED : START_BLUE)
+                        .startHeading(0, Math.toRadians(getAlliance() == Alliance.RED ? -90 : 90), 0)
                         .lineTo(getAlliance() == Alliance.RED ? SHOOT_RED : SHOOT_BLUE)
-                        .turnTo(0, Math.toRadians(getAlliance() == Alliance.RED ? -90 : 90), 0)
                         .build()
 
         );
@@ -98,7 +103,7 @@ public class CloseAuto extends Robot {
 
         follower.update(delta);
 
-        Turret.Basket basket = turret.getBasket(getAlliance(), odometry.position, odometry.velocity, odometry.rotation.y, odometry.angularVel.y);
+        Turret.Basket basket = turret.getBasket(getAlliance(), odometry.position, odometry.velocity);
         turret.lock(basket, odometry.rotation.y, odometry.angularVel.y, delta);
 
         switch (state) {
@@ -122,10 +127,10 @@ public class CloseAuto extends Robot {
                 collector.setPower(0);
                 break;
             case Collecting:
-                turret.shoot(0);
+                turret.shoot(basket, delta);
                 turret.retainStopper();
 
-                collector.setPower(1);
+                collector.setPower((System.nanoTime() - shootingSwitchTime) / 1E9 > 0.5 ? 1 : 0);
                 break;
             case MovingToGate:
             case AtGate:
@@ -166,6 +171,7 @@ public class CloseAuto extends Robot {
                     );
                 }
 
+                shootingSwitchTime = System.nanoTime();
                 state = State.Collecting;
                 break;
             case MovingToShoot:

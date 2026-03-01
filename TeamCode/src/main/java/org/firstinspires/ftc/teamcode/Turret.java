@@ -19,18 +19,17 @@ public class Turret {
 
     static final double GRAVITY = 9.81;
 
-    static final double BASKET_HEIGHT_MAX = 1.2;
+    static final double BASKET_HEIGHT_MAX = 1.25;
     static final double BASKET_HEIGHT_MIN = 1.1;
     static final double BASKET_SIDE_LENGTH = 0.56;
 
     static final double TURRET_HEIGHT = 0.33;
-    static final vec2 TURRET_OFFSET = new vec2(0.0, -0.06);
 
     static final double YAW_RANGE_OFFSET = Math.toRadians(-45);
     static final double YAW_TPR = 8192 * (113 / 20.0);
 
-    static final vec2 BLUE_BASKET = new vec2(-1.8, 1.8);
-    static final vec2 RED_BASKET = new vec2(1.8, 1.8);
+    static final vec2 BLUE_BASKET = new vec2(-1.7, 1.7);
+    static final vec2 RED_BASKET = new vec2(1.7, 1.7);
 
     static final double PREDICTION_FACTOR = 0;
     static final double PREDICTION_FACTOR_ANGULAR = 0;
@@ -75,9 +74,8 @@ public class Turret {
         vec2 shotFar;
         vec2 shotNear;
 
-        private Basket(vec2 position, vec3 robotPosition, double robotYaw) {
-            vec2 turretOffset = new vec2(TURRET_OFFSET.x, TURRET_OFFSET.y).rotate(robotYaw);
-            vec2 turretPosition = new vec2(robotPosition.x + turretOffset.x, robotPosition.z + turretOffset.y);
+        private Basket(vec2 position, vec3 robotPosition) {
+            vec2 turretPosition = new vec2(robotPosition.x, robotPosition.z);
 
             direction = new vec2(position.x - turretPosition.x, position.y - turretPosition.y);
             shotFar = new vec2(Math.hypot(direction.x, direction.y), BASKET_HEIGHT_MAX - TURRET_HEIGHT);
@@ -184,13 +182,14 @@ public class Turret {
         }
     }
 
-    public Basket getBasket(Robot.Alliance alliance, vec3 robotPosition, vec3 robotVelocity, double robotYaw, double robotAngularVel) {
+    public Basket getBasket(Robot.Alliance alliance, vec3 robotPosition, vec3 robotVelocity) {
         if (alliance == Robot.Alliance.UNKNOWN) return null;
+
         return new Basket(alliance == Robot.Alliance.RED ? RED_BASKET : BLUE_BASKET, new vec3(
                 robotPosition.x + robotVelocity.x * PREDICTION_FACTOR,
                 robotPosition.y + robotVelocity.y * PREDICTION_FACTOR,
                 robotPosition.z + robotVelocity.z * PREDICTION_FACTOR
-        ), robotYaw + robotAngularVel * PREDICTION_FACTOR_ANGULAR);
+        ));
     }
 
     public double currentYaw() {
