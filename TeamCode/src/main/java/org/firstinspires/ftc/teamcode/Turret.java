@@ -304,10 +304,10 @@ public class Turret {
     }
 
     public void retainStopper() {
-        stopper.setPosition(0.7);
+        stopper.setPosition(0.25);
     }
 
     public void releaseStopper() {
-        stopper.setPosition(0.95);
+        stopper.setPosition(0.45);
     }
 }
