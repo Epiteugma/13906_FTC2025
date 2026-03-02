@@ -20,10 +20,10 @@ public class Turret {
     static final double GRAVITY = 9.81;
 
     static final double BASKET_HEIGHT_MAX = 1.25;
-    static final double BASKET_HEIGHT_MIN = 1.1;
+    static final double BASKET_HEIGHT_MIN = 1.06;
     static final double BASKET_SIDE_LENGTH = 0.56;
 
-    static final double TURRET_HEIGHT = 0.33;
+    static final double TURRET_HEIGHT = 0.4;
 
     static final double YAW_RANGE_OFFSET = Math.toRadians(-45);
     static final double YAW_TPR = 8192 * (113 / 20.0);
@@ -97,12 +97,15 @@ public class Turret {
             return shot.x / (t * Math.cos(MAX_ANGLE));
         }
 
+        // The multiplier is slight efficiency roll-off (further = ever so slightly less efficient)
+        // take efficiency to match constant at x = 2
+
         public double maxShotVelocity() {
-            return shotVelocity(shotFar);
+            return shotVelocity(shotFar) * (1 + (shotFar.x - 2) * 0.012);
         }
 
         public double minShotVelocity() {
-            return shotVelocity(shotNear);
+            return shotVelocity(shotNear) * (1 + (shotFar.x - 2) * 0.012);
         }
 
         double shotAngle(double velocity, vec2 shot) {
@@ -127,8 +130,7 @@ public class Turret {
         static final double RATIO_B = 10 / 15.0;
         static final double RPM = 6000;
 
-        static final double EFFICIENCY = 0.47;
-
+        static final double EFFICIENCY = 0.43;
         static final double FLYWHEEL_RADIUS = 0.045;
         static final double MAX_FLYWHEEL_VELOCITY = RPM * RATIO / 60.0 * (2 * Math.PI);
 
@@ -160,11 +162,11 @@ public class Turret {
         }
 
         public double toFlywheelVelocity(double velocity) {
-            return (velocity + 0.35) / FLYWHEEL_RADIUS / EFFICIENCY;
+            return velocity / FLYWHEEL_RADIUS / EFFICIENCY;
         }
 
         public double toArtifactVelocity(double velocity) {
-            return EFFICIENCY * velocity * FLYWHEEL_RADIUS - 0.35;
+            return EFFICIENCY * velocity * FLYWHEEL_RADIUS;
         }
 
         void setPower(double power) {
@@ -290,16 +292,16 @@ public class Turret {
     boolean couldShoot = false;
 
     public boolean canShoot(Basket basket) {
-        double artifactVelocity = shooter.toArtifactVelocity(shooter.getFlywheelVelocity());
+        double flywheelVelocity = shooter.getFlywheelVelocity();
 
         if (!couldShoot) {
             double targetVelocity = basket.maxShotVelocity();
-            boolean didRampUp = (targetVelocity - artifactVelocity) < 0.3;
+            boolean didRampUp = (targetVelocity - shooter.toArtifactVelocity(flywheelVelocity)) < 0.01 * targetVelocity;
 
             if (!didRampUp) return false;
         }
 
-        couldShoot = artifactVelocity + 0.4 >= basket.minShotVelocity();
+        couldShoot = shooter.toArtifactVelocity(flywheelVelocity) * 1.075 >= basket.minShotVelocity();
         return couldShoot;
     }
 
