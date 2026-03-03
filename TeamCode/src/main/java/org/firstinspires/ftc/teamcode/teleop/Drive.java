@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.teleop;
 
+import org.firstinspires.ftc.teamcode.LEDManager;
 import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.SharedState;
 import org.firstinspires.ftc.teamcode.Turret;
@@ -25,6 +26,8 @@ public class Drive extends Robot {
 
     @Override
     public void start() {
+        if (LEDManager.instance != null) LEDManager.instance.off();
+
         timer = shootingSwitchTime = System.nanoTime();
 
         SharedState state = SharedState.instance;
@@ -127,4 +130,8 @@ public class Drive extends Robot {
         telemetry.update();
     }
 
+    @Override
+    public void stop() {
+        if (LEDManager.instance != null) LEDManager.instance.on();
+    }
 }

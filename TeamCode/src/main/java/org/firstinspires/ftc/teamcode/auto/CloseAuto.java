@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.auto;
 
+import org.firstinspires.ftc.teamcode.LEDManager;
 import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.SharedState;
 import org.firstinspires.ftc.teamcode.Turret;
@@ -66,6 +67,7 @@ public class CloseAuto extends Robot {
 
     @Override
     public void start() {
+        if (LEDManager.instance != null) LEDManager.instance.off();
         if (getAlliance() == Alliance.UNKNOWN) return;
 
         timer = System.nanoTime();
@@ -227,5 +229,6 @@ public class CloseAuto extends Robot {
         state.turretYaw = turret.currentYaw();
 
         SharedState.instance = state;
+        if (LEDManager.instance != null) LEDManager.instance.on();
     }
 }

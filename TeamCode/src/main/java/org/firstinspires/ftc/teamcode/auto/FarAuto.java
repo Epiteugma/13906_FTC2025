@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.auto;
 
+import org.firstinspires.ftc.teamcode.LEDManager;
 import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.SharedState;
 import org.firstinspires.ftc.teamcode.Turret;
@@ -49,10 +50,10 @@ public class FarAuto extends Robot {
 
     @Override
     public void start() {
+        if (LEDManager.instance != null) LEDManager.instance.off();
         if (getAlliance() == Alliance.UNKNOWN) return;
 
         timer = System.nanoTime();
-
         odometry.setPosition(getAlliance() == Alliance.RED ? START_RED : START_BLUE);
     }
 
@@ -132,5 +133,6 @@ public class FarAuto extends Robot {
         state.turretYaw = turret.currentYaw();
 
         SharedState.instance = state;
+        if (LEDManager.instance != null) LEDManager.instance.on();
     }
 }
