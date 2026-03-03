@@ -16,7 +16,7 @@ public class LEDManager implements OpModeManagerNotifier.Notifications {
     public static LEDManager instance;
 
     private boolean didInit;
-    private OpModeManagerImpl opModeManager;
+    private final OpModeManagerImpl opModeManager;
 
     public RevLED centerLED;
     public RevLED backLeftLED;
@@ -35,23 +35,23 @@ public class LEDManager implements OpModeManagerNotifier.Notifications {
         }
 
         public void off() {
-            this.red.setState(false);
-            this.green.setState(false);
+            this.red.setState(true);
+            this.green.setState(true);
         }
 
         public void green() {
-            this.red.setState(false);
-            this.green.setState(true);
-        }
-
-        public void red() {
             this.red.setState(true);
             this.green.setState(false);
         }
 
-        public void orange() {
-            this.red.setState(true);
+        public void red() {
+            this.red.setState(false);
             this.green.setState(true);
+        }
+
+        public void orange() {
+            this.red.setState(false);
+            this.green.setState(false);
         }
     }
 
@@ -70,8 +70,6 @@ public class LEDManager implements OpModeManagerNotifier.Notifications {
     public void onOpModePreInit(OpMode opMode) {
         if (this.didInit) return;
 
-        Log.v("LEDManager", "onOpModePreInit() called");
-
         HardwareMap hardwareMap = opMode.hardwareMap;
         didInit = true;
 
@@ -79,9 +77,7 @@ public class LEDManager implements OpModeManagerNotifier.Notifications {
             centerLED = new RevLED(hardwareMap, "centerLEDA", "centerLEDB");
             backLeftLED = new RevLED(hardwareMap, "backLeftLEDA", "backLeftLEDB");
             backRightLED = new RevLED(hardwareMap, "backRightLEDA", "backRightLEDB");
-        } catch (RuntimeException e) {
-            Log.e("LEDManager", "fail", e);
-
+        } catch (RuntimeException ignored) {
             opModeManager.unregisterListener(this);
             instance = null;
         }
