@@ -21,6 +21,10 @@ public class Drive extends Robot {
     boolean parking = false;
     boolean wasParking = false;
 
+    boolean collectorBack = false;
+    boolean collectorBackTimerLock = false;
+
+    long collectorBackTimer;
     long timer;
 
     @Override
@@ -57,6 +61,11 @@ public class Drive extends Robot {
         double y = -gamepad1.left_stick_y;
         double x = gamepad1.left_stick_x;
         double w = -gamepad1.right_stick_x;
+
+        if (gamepad2.b && !collectorBackTimerLock) collectorBackTimer = System.nanoTime();
+
+        collectorBackTimerLock = gamepad2.b;
+        collectorBack = gamepad2.a || (System.nanoTime() - collectorBackTimer) / 1E9 < 0.1;
 
         Turret.Basket basket = turret.getBasket(getAlliance(), odometry.position, odometry.velocity);
 
@@ -112,7 +121,7 @@ public class Drive extends Robot {
         if (!parking && (shooting || drivingToZone)) turret.shoot(basket, delta);
         else turret.shoot(0.3);
 
-        collector.setPower((System.nanoTime() - shootingSwitchTime) / 1E9 > 0.5 && (!shooting || canShoot) ? 1 : 0);
+        collector.setPower(collectorBack ? -1 : (System.nanoTime() - shootingSwitchTime) / 1E9 > 0.5 && (!shooting || canShoot) ? 1 : 0);
 
         telemetry.addData("canShoot", canShoot);
         telemetry.addLine();
