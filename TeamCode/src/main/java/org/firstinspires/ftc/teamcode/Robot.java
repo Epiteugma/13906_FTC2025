@@ -45,8 +45,9 @@ public abstract class Robot extends OpMode {
     protected MotorGroup collector;
 
     protected Turret turret;
-    protected Odometry odometry;
+    protected LEDManager ledManager;
 
+    protected Odometry odometry;
     protected Follower follower;
 
     public enum Alliance {
@@ -103,6 +104,9 @@ public abstract class Robot extends OpMode {
         follower.angular.kP = 0.1;
 
         turret = new Turret(hardwareMap, getHardwareLayout());
+
+        ledManager = new LEDManager(hardwareMap);
+        ledManager.off();
     }
 
     public HardwareLayout getHardwareLayout() {

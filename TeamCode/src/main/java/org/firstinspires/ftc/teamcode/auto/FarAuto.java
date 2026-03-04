@@ -50,7 +50,6 @@ public class FarAuto extends Robot {
 
     @Override
     public void start() {
-        if (LEDManager.instance != null) LEDManager.instance.off();
         if (getAlliance() == Alliance.UNKNOWN) return;
 
         timer = System.nanoTime();
@@ -133,6 +132,5 @@ public class FarAuto extends Robot {
         state.turretYaw = turret.currentYaw();
 
         SharedState.instance = state;
-        if (LEDManager.instance != null) LEDManager.instance.on();
     }
 }

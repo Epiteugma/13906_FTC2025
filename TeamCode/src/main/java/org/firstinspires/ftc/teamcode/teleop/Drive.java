@@ -26,8 +26,6 @@ public class Drive extends Robot {
 
     @Override
     public void start() {
-        if (LEDManager.instance != null) LEDManager.instance.off();
-
         timer = shootingSwitchTime = System.nanoTime();
 
         SharedState state = SharedState.instance;
@@ -128,10 +126,5 @@ public class Drive extends Robot {
         telemetry.addData("in close shooting zone?", isInZone(ZoneManager.SHOOTING_ZONE_CLOSE));
         telemetry.addData("in far shooting zone?", isInZone(ZoneManager.SHOOTING_ZONE_FAR));
         telemetry.update();
-    }
-
-    @Override
-    public void stop() {
-        if (LEDManager.instance != null) LEDManager.instance.on();
     }
 }

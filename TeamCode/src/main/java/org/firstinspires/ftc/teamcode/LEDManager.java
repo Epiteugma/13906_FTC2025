@@ -5,6 +5,7 @@ import android.util.Log;
 
 import com.qualcomm.ftccommon.FtcEventLoop;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.OpModeManager;
 import com.qualcomm.robotcore.eventloop.opmode.OpModeManagerImpl;
 import com.qualcomm.robotcore.eventloop.opmode.OpModeManagerNotifier;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
@@ -12,15 +13,9 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.ftccommon.external.OnCreateEventLoop;
 
-public class LEDManager implements OpModeManagerNotifier.Notifications {
-    public static LEDManager instance;
-
-    private boolean didInit;
-    private final OpModeManagerImpl opModeManager;
-
-    public RevLED centerLED;
-    public RevLED backLeftLED;
-    public RevLED backRightLED;
+public class LEDManager {
+    private static final OpModeMonitor monitor = new OpModeMonitor();
+    public RevLED[] list;
 
     public static class RevLED {
         public DigitalChannel red;
@@ -55,49 +50,38 @@ public class LEDManager implements OpModeManagerNotifier.Notifications {
         }
     }
 
+    private static class OpModeMonitor implements OpModeManagerNotifier.Notifications {
+        @Override
+        public void onOpModePreInit(OpMode opMode) {
+            if (opMode.getClass() != OpModeManagerImpl.DefaultOpMode.class) return;
+
+            LEDManager manager = new LEDManager(opMode.hardwareMap);
+            manager.on();
+        }
+
+        @Override public void onOpModePreStart(OpMode opMode) {  }
+        @Override public void onOpModePostStop(OpMode opMode) {  }
+    }
+
     @OnCreateEventLoop
     public static void startup(Context ignored, FtcEventLoop eventLoop) {
-        if (instance != null) return;
-        instance = new LEDManager(eventLoop.getOpModeManager());
+        OpModeManagerImpl opModeManager = eventLoop.getOpModeManager();
+        opModeManager.registerListener(monitor);
     }
 
-    private LEDManager(OpModeManagerImpl opModeManager) {
-        this.opModeManager = opModeManager;
-        opModeManager.registerListener(this);
+    public LEDManager(HardwareMap hardwareMap) {
+        RevLED centerLED = new RevLED(hardwareMap, "centerLEDA", "centerLEDB");
+        RevLED backLeftLED = new RevLED(hardwareMap, "backLeftLEDA", "backLeftLEDB");
+        RevLED backRightLED = new RevLED(hardwareMap, "backRightLEDA", "backRightLEDB");
+
+        this.list = new RevLED[]{centerLED, backLeftLED, backRightLED};
     }
-
-    @Override
-    public void onOpModePreInit(OpMode opMode) {
-        if (this.didInit) return;
-
-        HardwareMap hardwareMap = opMode.hardwareMap;
-        didInit = true;
-
-        try {
-            centerLED = new RevLED(hardwareMap, "centerLEDA", "centerLEDB");
-            backLeftLED = new RevLED(hardwareMap, "backLeftLEDA", "backLeftLEDB");
-            backRightLED = new RevLED(hardwareMap, "backRightLEDA", "backRightLEDB");
-        } catch (RuntimeException ignored) {
-            opModeManager.unregisterListener(this);
-            instance = null;
-        }
-    }
-
-    @Override
-    public void onOpModePreStart(OpMode opMode) {  }
-
-    @Override
-    public void onOpModePostStop(OpMode opMode) {  }
 
     public void on() {
-        centerLED.orange();
-        backLeftLED.orange();
-        backRightLED.orange();
+        for (RevLED led : this.list) led.orange();
     }
 
     public void off() {
-        centerLED.off();
-        backLeftLED.off();
-        backRightLED.off();
+        for (RevLED led : this.list) led.off();
     }
 }
