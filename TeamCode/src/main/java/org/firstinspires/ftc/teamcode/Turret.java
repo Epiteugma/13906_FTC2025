@@ -102,11 +102,11 @@ public class Turret {
         // as well as an encoder error threshold of 15%
 
         public double maxShotVelocity() {
-            return shotVelocity(shotFar) * (1 + (shotFar.x - 2) * 0.013);
+            return shotVelocity(shotFar) * (1 + (shotFar.x - 2) * 0.014);
         }
 
         public double minShotVelocity() {
-            return shotVelocity(shotNear) * (1 + (shotFar.x - 2) * 0.013) * 0.85;
+            return shotVelocity(shotNear) * (1 + (shotFar.x - 2) * 0.014) * 0.85;
         }
 
         double shotAngle(double velocity, vec2 shot) {
@@ -131,7 +131,7 @@ public class Turret {
         static final double RATIO_B = 10 / 15.0;
         static final double RPM = 6000;
 
-        static final double EFFICIENCY = 0.43;
+        static final double EFFICIENCY = 0.42;
         static final double FLYWHEEL_RADIUS = 0.045;
         static final double MAX_FLYWHEEL_VELOCITY = RPM * RATIO / 60.0 * (2 * Math.PI);
 
