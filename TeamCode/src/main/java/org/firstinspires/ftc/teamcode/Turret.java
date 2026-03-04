@@ -98,14 +98,15 @@ public class Turret {
         }
 
         // The multiplier is slight efficiency roll-off (further = ever so slightly less efficient)
-        // take efficiency to match constant at x = 2
+        // take efficiency to match constant in Shooter class when x = 2
+        // as well as an encoder error threshold of 15%
 
         public double maxShotVelocity() {
-            return shotVelocity(shotFar) * (1 + (shotFar.x - 2) * 0.012);
+            return shotVelocity(shotFar) * (1 + (shotFar.x - 2) * 0.013);
         }
 
         public double minShotVelocity() {
-            return shotVelocity(shotNear) * (1 + (shotFar.x - 2) * 0.012);
+            return shotVelocity(shotNear) * (1 + (shotFar.x - 2) * 0.013) * 0.85;
         }
 
         double shotAngle(double velocity, vec2 shot) {
@@ -134,7 +135,7 @@ public class Turret {
         static final double FLYWHEEL_RADIUS = 0.045;
         static final double MAX_FLYWHEEL_VELOCITY = RPM * RATIO / 60.0 * (2 * Math.PI);
 
-        PIDFController pidf = new PIDFController(0.1, 0, 0, 1 / MAX_FLYWHEEL_VELOCITY);
+        PIDFController pidf = new PIDFController(0.2, 0, 0, 1 / MAX_FLYWHEEL_VELOCITY);
 
         DcMotorEx motor;
         DcMotorEx motorB;
@@ -301,7 +302,7 @@ public class Turret {
             if (!didRampUp) return false;
         }
 
-        couldShoot = shooter.toArtifactVelocity(flywheelVelocity) * 1.075 >= basket.minShotVelocity();
+        couldShoot = shooter.toArtifactVelocity(flywheelVelocity) >= basket.minShotVelocity();
         return couldShoot;
     }
 
