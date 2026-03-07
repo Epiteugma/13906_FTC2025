@@ -9,7 +9,6 @@ import com.qualcomm.robotcore.hardware.Servo;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 import dev.zedboy.greatness.PIDFController;
-import dev.zedboy.greatness.math.mat;
 import dev.zedboy.greatness.math.vec2;
 import dev.zedboy.greatness.math.vec3;
 
@@ -61,7 +60,6 @@ public class Turret {
         yawEncoder = hardwareMap.get(DcMotor.class, "frontLeft");
 
         pitch.setDirection(Servo.Direction.REVERSE);
-        pitch.setPosition(0);
 
         yawEncoder.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         yawEncoder.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);

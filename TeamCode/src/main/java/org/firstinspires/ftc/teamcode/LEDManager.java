@@ -70,11 +70,15 @@ public class LEDManager {
     }
 
     public LEDManager(HardwareMap hardwareMap) {
-        RevLED centerLED = new RevLED(hardwareMap, "centerLEDA", "centerLEDB");
-        RevLED backLeftLED = new RevLED(hardwareMap, "backLeftLEDA", "backLeftLEDB");
-        RevLED backRightLED = new RevLED(hardwareMap, "backRightLEDA", "backRightLEDB");
+        try {
+            RevLED centerLED = new RevLED(hardwareMap, "centerLEDA", "centerLEDB");
+            RevLED backLeftLED = new RevLED(hardwareMap, "backLeftLEDA", "backLeftLEDB");
+            RevLED backRightLED = new RevLED(hardwareMap, "backRightLEDA", "backRightLEDB");
 
-        this.list = new RevLED[]{centerLED, backLeftLED, backRightLED};
+            this.list = new RevLED[]{centerLED, backLeftLED, backRightLED};
+        } catch (RuntimeException ignored) {
+            this.list = new RevLED[0];
+        }
     }
 
     public void on() {
