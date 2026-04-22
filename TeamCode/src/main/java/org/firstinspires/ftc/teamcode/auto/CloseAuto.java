@@ -22,6 +22,9 @@ public class CloseAuto extends Robot {
     public static final vec3 GATE_RED = new vec3(1.45, 0, 0);
     public static final vec3 GATE_BLUE = new vec3(-1.45, 0, 0);
 
+    public static final vec3 PARK_RED = new vec3(1.0, 0, 0);
+    public static final vec3 PARK_BLUE = new vec3(-1.0, 0, 0);
+
     public static final int OPEN_GATE_AFTER = -1;
     public static final double GATE_WAIT_TIME = 1;
 
@@ -62,6 +65,7 @@ public class CloseAuto extends Robot {
         AtGate,
         Shooting,
         Collecting,
+        Parking,
         Idle
     }
 
@@ -137,6 +141,7 @@ public class CloseAuto extends Robot {
             case AtGate:
                 collector.setPower(0);
                 break;
+            case Parking:
             case Idle:
                 turret.shoot(0);
                 collector.setPower(0);
@@ -150,7 +155,15 @@ public class CloseAuto extends Robot {
                 if ((System.nanoTime() - shotTimer) / 1E9 < SHOT_CYCLE_TIME) return;
 
                 if (rowsCollected >= artifactRows.length) {
-                    state = State.Idle;
+                    state = State.Parking;
+                    follower.setPath(
+                            new PathBuilder()
+                                    .startAt(getAlliance() == Alliance.RED ? SHOOT_RED : SHOOT_BLUE)
+                                    .startHeading(0, Math.toRadians(getAlliance() == Alliance.RED ? -90 : 90), 0)
+                                    .lineTo(getAlliance() == Alliance.RED ? PARK_RED : PARK_BLUE)
+                                    .turnTo(0, Math.toRadians(getAlliance() == Alliance.RED ? 90 : -90), 0)
+                                    .build()
+                    );
                     return;
                 }
 
@@ -215,6 +228,10 @@ public class CloseAuto extends Robot {
                 );
 
                 state = State.MovingToShoot;
+                break;
+            case Parking:
+                follower.setPath(null);
+                state = State.Idle;
                 break;
         }
     }

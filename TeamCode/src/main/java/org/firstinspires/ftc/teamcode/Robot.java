@@ -30,19 +30,7 @@ public abstract class Robot extends OpMode {
 
     protected DcMotor[] driveTrain;
 
-    public static class MotorGroup {
-        DcMotor[] motors;
-
-        public MotorGroup(DcMotor ...motors) {
-            this.motors = motors;
-        }
-
-        public void setPower(double power) {
-            for (DcMotor motor : motors) motor.setPower(power);
-        }
-    }
-
-    protected MotorGroup collector;
+    protected DcMotor collector;
 
     protected Turret turret;
     protected LEDManager ledManager;
@@ -75,13 +63,8 @@ public abstract class Robot extends OpMode {
             motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         }
 
-        DcMotor collector = hardwareMap.get(DcMotor.class, "collector");
-        DcMotor collectorB = hardwareMap.get(DcMotor.class, "collectorB");
-
+        collector = hardwareMap.get(DcMotor.class, "collector");
         collector.setDirection(DcMotor.Direction.REVERSE);
-        collectorB.setDirection(DcMotor.Direction.REVERSE);
-
-        this.collector = new MotorGroup(collector, collectorB);
 
         GoBildaPinpointDriver pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
         pinpoint.setOffsets(-0.06, -0.175, DistanceUnit.METER);

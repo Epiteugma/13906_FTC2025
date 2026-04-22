@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -38,10 +37,9 @@ public class Turret {
     Servo stopper;
     Servo pitch;
 
-    CRServo yaw;
-    DcMotor yawEncoder;
+    DcMotor yaw;
     final double yawDirection;
-    PIDFController yawPIDF = new PIDFController(1.5, 0, 0.05);
+    PIDFController yawPIDF = new PIDFController(0.1, 0, 0.05);
 
     public double yawOrigin = 0;
     public double yawOffset = 0;
@@ -56,14 +54,10 @@ public class Turret {
         stopper = hardwareMap.get(Servo.class, "stopper");
         pitch = hardwareMap.get(Servo.class, "turretPitch");
 
-        yaw = hardwareMap.get(CRServo.class, "turretYaw");
-        yawEncoder = hardwareMap.get(DcMotor.class, "frontLeft");
+        yaw = hardwareMap.get(DcMotor.class, "turretYaw");
+        yawDirection = -1;
 
         pitch.setDirection(Servo.Direction.REVERSE);
-
-        yawEncoder.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        yawEncoder.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        yawDirection = -1;
     }
 
     public static class Basket {
@@ -194,7 +188,7 @@ public class Turret {
     }
 
     public double currentYaw() {
-        return yawOrigin + yawEncoder.getCurrentPosition() * yawDirection / YAW_TPR * (2 * Math.PI);
+        return yawOrigin + yaw.getCurrentPosition() * yawDirection / YAW_TPR * (2 * Math.PI);
     }
 
     public boolean isYawLocked(Basket basket, double robotYaw) {
