@@ -39,7 +39,7 @@ public class Turret {
 
     DcMotor yaw;
     final double yawDirection;
-    PIDFController yawPIDF = new PIDFController(0.1, 0, 0.05);
+    PIDFController yawPIDF = new PIDFController(1.5, 0, 0.05);
 
     public double yawOrigin = 0;
     public double yawOffset = 0;
@@ -55,7 +55,10 @@ public class Turret {
         pitch = hardwareMap.get(Servo.class, "turretPitch");
 
         yaw = hardwareMap.get(DcMotor.class, "turretYaw");
-        yawDirection = -1;
+        yawDirection = 1;
+
+        yaw.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        yaw.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         pitch.setDirection(Servo.Direction.REVERSE);
     }
@@ -119,11 +122,11 @@ public class Turret {
 
     public static class Shooter {
         static final double TPR = 28;
-        static final double RATIO = 10 / 15.0;
-        static final double RATIO_B = 10 / 15.0;
-        static final double RPM = 6000;
+        static final double RATIO = 1.0;
+        static final double RATIO_B = 1.0;
+        static final double RPM = 4500;
 
-        static final double EFFICIENCY = 0.415;
+        static final double EFFICIENCY = 0.46;
         static final double FLYWHEEL_RADIUS = 0.045;
         static final double MAX_FLYWHEEL_VELOCITY = RPM * RATIO / 60.0 * (2 * Math.PI);
 

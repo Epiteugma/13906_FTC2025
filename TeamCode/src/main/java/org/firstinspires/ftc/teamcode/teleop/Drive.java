@@ -14,6 +14,7 @@ public class Drive extends Robot {
     static final vec3 PARK_BLUE = new vec3(0.8, 0, -1);
     static final vec3 PARK_RED = new vec3(-0.8, 0, -1);
 
+    boolean forceShoot = false;
     boolean shooting = false;
     boolean wasShooting = false;
     long shootingSwitchTime = 0;
@@ -69,7 +70,8 @@ public class Drive extends Robot {
 
         Turret.Basket basket = turret.getBasket(getAlliance(), odometry.position, odometry.velocity);
 
-        shooting = turret.willNotHitWall(basket) && (
+        forceShoot = gamepad1.x;
+        shooting = forceShoot || turret.willNotHitWall(basket) && (
                 isInZone(ZoneManager.SHOOTING_ZONE_CLOSE) || isInZone(ZoneManager.SHOOTING_ZONE_FAR)
         ) && gamepad1.right_trigger < 0.2;
 
@@ -118,7 +120,8 @@ public class Drive extends Robot {
         if (shooting) turret.releaseStopper();
         else turret.retainStopper();
 
-        if (!parking && (shooting || drivingToZone)) turret.shoot(basket, delta);
+        if (forceShoot) turret.shoot(1);
+        else if (!parking && (shooting || drivingToZone)) turret.shoot(basket, delta);
         else turret.shoot(0.3);
 
         collector.setPower(collectorBack ? -1 : (System.nanoTime() - shootingSwitchTime) / 1E9 > 0.5 && (!shooting || canShoot) ? 1 : 0);
