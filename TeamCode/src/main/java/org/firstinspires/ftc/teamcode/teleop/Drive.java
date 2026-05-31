@@ -122,7 +122,7 @@ public class Drive extends Robot {
 
         if (forceShoot) turret.shoot(1);
         else if (!parking && (shooting || drivingToZone)) turret.shoot(basket, delta);
-        else turret.shoot(0.3);
+        else turret.shoot(0.4069);
 
         collector.setPower(collectorBack ? -1 : (System.nanoTime() - shootingSwitchTime) / 1E9 > 0.5 && (!shooting || canShoot) ? 1 : 0);
 
