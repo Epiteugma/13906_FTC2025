@@ -29,7 +29,7 @@ public class Turret {
     static final vec2 BLUE_BASKET = new vec2(-1.7, 1.7);
     static final vec2 RED_BASKET = new vec2(1.7, 1.7);
 
-    static final double PREDICTION_FACTOR = 0.32;
+    static final double PREDICTION_FACTOR = 0.4;
 
     public Shooter shooter;
 
