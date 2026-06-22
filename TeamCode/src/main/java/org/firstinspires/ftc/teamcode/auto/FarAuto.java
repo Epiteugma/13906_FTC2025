@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode.auto;
 
-import org.firstinspires.ftc.teamcode.LEDManager;
 import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.SharedState;
 import org.firstinspires.ftc.teamcode.Turret;

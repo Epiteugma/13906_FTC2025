@@ -1,13 +1,10 @@
 package org.firstinspires.ftc.teamcode.auto;
 
-import org.firstinspires.ftc.teamcode.LEDManager;
 import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.SharedState;
 import org.firstinspires.ftc.teamcode.Turret;
-import org.firstinspires.ftc.teamcode.ZoneManager;
 
 import dev.zedboy.greatness.PathBuilder;
-import dev.zedboy.greatness.math.vec2;
 import dev.zedboy.greatness.math.vec3;
 
 public class CloseAuto extends Robot {
