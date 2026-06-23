@@ -8,10 +8,10 @@ import dev.zedboy.greatness.PathBuilder;
 import dev.zedboy.greatness.math.vec3;
 
 public class CloseAuto extends Robot {
-    public static final double SHOT_CYCLE_TIME = 1.5;
+    public static final double SHOT_CYCLE_TIME = 1.2;
 
-    public static final vec3 START_RED = new vec3(0.95, 0, 1.55);
-    public static final vec3 START_BLUE = new vec3(-0.95, 0, 1.55);
+    public static final vec3 START_RED = new vec3(1.0, 0, 1.55);
+    public static final vec3 START_BLUE = new vec3(-1.0, 0, 1.55);
 
     public static final vec3 SHOOT_RED = new vec3(0.5, 0, 0.5);
     public static final vec3 SHOOT_BLUE = new vec3(-0.5, 0, 0.5);
@@ -38,11 +38,11 @@ public class CloseAuto extends Robot {
     }
 
     ArtifactRow redClose = new ArtifactRow(new vec3(0.7, 0, 0.3), 0.7, Alliance.RED);
-    ArtifactRow redMiddle = new ArtifactRow(new vec3(0.7, 0, -0.3), 0.8, Alliance.RED);
+    ArtifactRow redMiddle = new ArtifactRow(new vec3(0.7, 0, -0.35), 0.8, Alliance.RED);
     ArtifactRow redFar = new ArtifactRow(new vec3(0.7, 0, -0.9), 0.8, Alliance.RED);
 
     ArtifactRow blueClose = new ArtifactRow(new vec3(-0.7, 0, 0.3), 0.7, Alliance.BLUE);
-    ArtifactRow blueMiddle = new ArtifactRow(new vec3(-0.7, 0, -0.3), 0.8, Alliance.BLUE);
+    ArtifactRow blueMiddle = new ArtifactRow(new vec3(-0.7, 0, -0.35), 0.8, Alliance.BLUE);
     ArtifactRow blueFar = new ArtifactRow(new vec3(-0.7, 0, -0.9), 0.8, Alliance.BLUE);
 
     long timer;
