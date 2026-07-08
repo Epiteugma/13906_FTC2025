@@ -9,7 +9,7 @@ import dev.zedboy.greatness.PathBuilder;
 import dev.zedboy.greatness.math.vec3;
 
 public class FarAuto extends Robot {
-    public static final double SHOT_CYCLE_TIME = 2.7;
+    public static final double SHOT_CYCLE_TIME = 2.0;
 
     public static final vec3 START_RED = new vec3(0.35, 0, -1.55);
     public static final vec3 START_BLUE = new vec3(-0.35, 0, -1.55);
@@ -22,6 +22,9 @@ public class FarAuto extends Robot {
 
     static final vec3 SHOOT_RED = new vec3(0.5, 0, -1.5);
     static final vec3 SHOOT_BLUE = new vec3(-0.5, 0, -1.5);
+
+    static final vec3 PARK_RED = new vec3(1.0, 0, -1.5);
+    static final vec3 PARK_BLUE = new vec3(-1.0, 0, -1.5);
 
     long timer;
     long shotTimer;
@@ -39,6 +42,12 @@ public class FarAuto extends Robot {
             .lineTo(getAlliance() == Alliance.RED ? RETRACT_RED : RETRACT_BLUE)
             .lineTo(getAlliance() == Alliance.RED ? COLLECT_RED : COLLECT_BLUE)
             .lineTo(getAlliance() == Alliance.RED ? SHOOT_RED : SHOOT_BLUE)
+            .build();
+
+    Path parkPath = new PathBuilder()
+            .startAt(getAlliance() == Alliance.RED ? SHOOT_RED : SHOOT_BLUE)
+            .startHeading(0, Math.toRadians(getAlliance() == Alliance.RED ? -90 : 90), 0)
+            .lineTo(getAlliance() == Alliance.RED ? PARK_RED : PARK_BLUE)
             .build();
 
     enum State {
@@ -99,6 +108,9 @@ public class FarAuto extends Robot {
         }
 
         switch (state) {
+            case Idle:
+                follower.setPath(null);
+                break;
             case Shooting:
                 if ((System.nanoTime() - shotTimer) / 1E9 < SHOT_CYCLE_TIME) return;
 
@@ -109,6 +121,7 @@ public class FarAuto extends Robot {
                     follower.setPath(collectPath);
                 } else {
                     state = State.Idle;
+                    follower.setPath(parkPath);
                 }
 
                 break;

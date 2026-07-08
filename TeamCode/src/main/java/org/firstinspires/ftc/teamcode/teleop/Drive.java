@@ -14,7 +14,6 @@ public class Drive extends Robot {
     static final vec3 PARK_BLUE = new vec3(0.8, 0, -1);
     static final vec3 PARK_RED = new vec3(-0.8, 0, -1);
 
-    boolean forceShoot = false;
     boolean shooting = false;
     boolean wasShooting = false;
     long shootingSwitchTime = 0;
@@ -22,10 +21,11 @@ public class Drive extends Robot {
     boolean parking = false;
     boolean wasParking = false;
 
-    boolean collectorBack = false;
-    boolean collectorBackTimerLock = false;
+    boolean killCollector = false;
+    boolean killCollectorLock = false;
 
-    long collectorBackTimer;
+    boolean collectorBack = false;
+
     long timer;
 
     @Override
@@ -63,15 +63,14 @@ public class Drive extends Robot {
         double x = gamepad1.left_stick_x;
         double w = -gamepad1.right_stick_x;
 
-        if (gamepad2.b && !collectorBackTimerLock) collectorBackTimer = System.nanoTime();
+        if (gamepad2.b && !killCollectorLock) killCollector = !killCollector;
+        killCollectorLock = gamepad2.b;
 
-        collectorBackTimerLock = gamepad2.b;
-        collectorBack = gamepad2.a || (System.nanoTime() - collectorBackTimer) / 1E9 < 0.1;
+        collectorBack = gamepad2.a;
 
         Turret.Basket basket = turret.getBasket(getAlliance(), odometry.position, odometry.velocity);
 
-        forceShoot = gamepad1.x;
-        shooting = forceShoot || turret.willNotHitWall(basket) && (
+        shooting = turret.willNotHitWall(basket) && (
                 isInZone(ZoneManager.SHOOTING_ZONE_CLOSE) || isInZone(ZoneManager.SHOOTING_ZONE_FAR)
         ) && gamepad1.right_trigger < 0.2;
 
@@ -120,11 +119,12 @@ public class Drive extends Robot {
         if (shooting) turret.releaseStopper();
         else turret.retainStopper();
 
-        if (forceShoot) turret.shoot(1);
-        else if (!parking && (shooting || drivingToZone)) turret.shoot(basket, delta);
+        if (!parking && (shooting || drivingToZone)) turret.shoot(basket, delta);
         else turret.shoot(0.4069);
 
-        collector.setPower(collectorBack ? -1 : (System.nanoTime() - shootingSwitchTime) / 1E9 > 0.5 && (!shooting || canShoot) ? 1 : 0);
+        if (shooting && canShoot) killCollector = false;
+
+        collector.setPower(collectorBack ? -1 : (System.nanoTime() - shootingSwitchTime) / 1E9 > 0.5 && !killCollector && (!shooting || canShoot) ? 1 : 0);
 
         telemetry.addData("canShoot", canShoot);
         telemetry.addLine();
