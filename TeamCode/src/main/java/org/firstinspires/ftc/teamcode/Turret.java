@@ -201,8 +201,23 @@ public class Turret {
     }
 
     public void lockYaw(Basket basket, double robotYaw, double delta, Telemetry telemetry) {
-        double currentYaw = currentYaw();
         double targetYaw = Math.atan2(basket.direction.y, basket.direction.x) - Math.PI / 2 - robotYaw + yawOffset;
+        lockYawRelative(targetYaw, delta);
+
+        if (telemetry != null) {
+            double currentYaw = currentYaw();
+
+            telemetry.addData("current yaw (deg)", Math.toDegrees(currentYaw));
+            telemetry.addData("target yaw (deg)", Math.toDegrees(targetYaw));
+        }
+    }
+
+    public void lockYaw(Basket basket, double robotYaw, double delta) {
+        lockYaw(basket, robotYaw, delta, null);
+    }
+
+    public void lockYawRelative(double targetYaw, double delta) {
+        double currentYaw = currentYaw();
 
         targetYaw = Math.atan2(
                 Math.sin(targetYaw - YAW_RANGE_OFFSET),
@@ -210,15 +225,6 @@ public class Turret {
         ) + YAW_RANGE_OFFSET;
 
         yaw.setPower(yawPIDF.update(targetYaw, currentYaw, delta));
-
-        if (telemetry != null) {
-            telemetry.addData("current yaw (deg)", Math.toDegrees(currentYaw));
-            telemetry.addData("target yaw (deg)", Math.toDegrees(targetYaw));
-        }
-    }
-
-    public void lockYaw(Basket basket, double robotYaw, double robotAngularVel, double delta) {
-        lockYaw(basket, robotYaw, delta, null);
     }
 
     public void lockPitch(Basket basket, double flywheelVelocity, Telemetry telemetry) {
@@ -298,6 +304,11 @@ public class Turret {
 
         couldShoot = shooter.toArtifactVelocity(flywheelVelocity) >= basket.minShotVelocity();
         return couldShoot;
+    }
+
+    public boolean canShoot(double targetVelocity) {
+        double flywheelVelocity = shooter.getFlywheelVelocity();
+        return shooter.toArtifactVelocity(flywheelVelocity) >= targetVelocity;
     }
 
     public void retainStopper() {
